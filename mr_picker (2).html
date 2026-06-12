@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mr. Picker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{--ink:#26331a;--paper:#eef3e2;--paper2:#e3ecd0;--accent:#4c7a2f;--accent2:#6fae46;--brine:#c7d96a;--warn:#b3601e;--warn-bg:#f7e6d4;--bad:#b3261e;--bad-bg:#fbe3e1;--ok:#2f7a4a;--ok-bg:#e0f0e4;--line:#cbd9a8;--shadow:rgba(40,60,20,.18);}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  body{font-family:'Courier New',ui-monospace,monospace;background:var(--paper);background-image:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(76,122,47,.06) 27px,rgba(76,122,47,.06) 28px);color:var(--ink);min-height:100vh;font-size:15px;padding:env(safe-area-inset-top) 0 0}
+  .wrap{max-width:560px;margin:0 auto;padding:18px 16px 130px}
+  header{border-bottom:3px double var(--accent);padding-bottom:12px;margin-bottom:14px}
+  .kicker{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:700}
+  h1{font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1;letter-spacing:-.5px;margin-top:4px;color:var(--accent)}
+  h1 .jar{font-size:26px}
+  .sub{font-size:13px;color:#4f5d3a;margin-top:6px;letter-spacing:.5px}
+  .count{display:inline-block;background:var(--accent);color:var(--paper);font-size:11px;padding:2px 8px;border-radius:2px;margin-top:8px;letter-spacing:1px}
+  .keybar{font-size:11px;text-align:right;margin-top:6px}
+  .keybar a{color:var(--accent);cursor:pointer;text-decoration:underline}
+  .tabs{display:flex;gap:8px;margin-bottom:16px}
+  .tabs button{flex:1;font-family:inherit;font-weight:700;font-size:15px;letter-spacing:1px;padding:14px 8px;border:2px solid var(--accent);border-radius:4px;background:var(--paper);color:var(--ink);cursor:pointer;box-shadow:3px 3px 0 var(--shadow);text-transform:uppercase}
+  .tabs button.on{background:var(--accent);color:var(--paper)}
+  .tabs button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
+  .step{border:2px solid var(--accent);border-radius:4px;margin:12px 0;box-shadow:5px 5px 0 var(--shadow);background:var(--paper2)}
+  .shead{font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;padding:8px 12px;border-bottom:1.5px solid var(--accent);background:var(--accent);color:var(--paper)}
+  .sbody{padding:16px}
+  button{font-family:inherit;font-weight:700;font-size:16px;letter-spacing:1px;padding:15px 12px;border:2px solid var(--accent);border-radius:4px;background:var(--paper);color:var(--ink);cursor:pointer;box-shadow:3px 3px 0 var(--shadow);transition:transform .08s,box-shadow .08s;text-transform:uppercase;width:100%}
+  button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
+  button.primary{background:var(--accent);color:var(--paper)}
+  button.warn{background:var(--warn);color:#fff;border-color:var(--warn)}
+  .row{display:flex;gap:10px}.row button{width:auto;flex:1}
+  .mode{display:flex;gap:8px;margin-bottom:14px}
+  .mode button{font-size:13px;padding:11px 6px;background:var(--paper)}
+  .mode button.on{background:var(--accent);color:var(--paper)}
+  input{font-family:inherit;font-size:20px;padding:13px 14px;border:2px solid var(--accent);border-radius:4px;background:var(--paper);letter-spacing:1px;text-transform:uppercase;width:100%}
+  input:focus{outline:none;background:#fff;box-shadow:inset 0 0 0 2px var(--accent)}
+  label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#4f5d3a;display:block;margin-bottom:6px;font-weight:700}
+  #reader{width:100%;border:2px solid var(--accent);border-radius:4px;overflow:hidden;background:#000;margin-bottom:10px;display:none}
+  #reader video{display:block;width:100%!important}
+  #preview{width:100%;border:2px solid var(--accent);border-radius:4px;margin-top:12px;display:none}
+  .stat{font-size:13px;text-align:center;color:#4f5d3a;letter-spacing:1px;margin-top:10px;min-height:16px}
+  .err{font-size:13px;color:var(--bad);text-align:center;margin-top:10px;min-height:16px}
+  .find{border:2px solid var(--accent);border-radius:4px;overflow:hidden;margin-top:4px}
+  .find .fhead{padding:16px;text-align:center;background:var(--ok-bg)}
+  .find.miss .fhead{background:var(--bad-bg)}
+  .flabel{font-size:13px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--ok)}
+  .find.miss .flabel{color:var(--bad)}
+  .fpart{font-family:Georgia,serif;font-size:26px;font-weight:700;margin-top:4px;word-break:break-all}
+  .floc{font-family:Georgia,serif;font-size:34px;font-weight:700;color:var(--accent);margin-top:8px;letter-spacing:1px}
+  .fqty{font-size:14px;margin-top:4px;color:#3a4a26}
+  .keepwarn{margin-top:10px;background:#4c7a2f;color:#fff;padding:8px;border-radius:3px;font-size:13px;font-weight:700;letter-spacing:1px;display:none}
+  .locpick{margin-top:12px}
+  .locpick .lp{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:3px;padding:12px;margin-bottom:8px;cursor:pointer}
+  .locpick .lp:active{background:var(--brine)}
+  .locpick .lp .lloc{font-family:Georgia,serif;font-size:20px;font-weight:700;color:var(--accent)}
+  .locpick .lp .lqty{font-size:13px;color:#3a4a26}
+  .qrow{display:flex;gap:10px;align-items:center;margin-top:14px}
+  .qrow label{margin:0;white-space:nowrap}
+  .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .np{font-size:22px;padding:16px 0;width:auto;background:var(--paper)}
+  .np:active{background:var(--accent);color:var(--paper)}
+  .pickqueue{margin-top:14px}
+  .pq{background:#fff;border:1.5px solid var(--line);border-radius:3px;padding:10px 12px;margin-bottom:8px}
+  .pq.done{opacity:.5}
+  .pq .pqtop{display:flex;justify-content:space-between;align-items:baseline}
+  .pq .pqpart{font-weight:700;font-size:16px}
+  .pq .pqloc{font-family:Georgia,serif;font-size:20px;font-weight:700;color:var(--accent)}
+  .pq .pqmeta{font-size:12px;color:#4f5d3a;margin-top:3px}
+  .pq.miss{border-color:var(--bad);background:var(--bad-bg)}
+  .pq .pqbtns{display:flex;gap:8px;margin-top:8px}
+  .pq .pqbtns button{font-size:12px;padding:9px 6px}
+  .log{margin-top:24px}
+  .log h2{font-family:Georgia,serif;font-size:20px;border-bottom:2px solid var(--accent);padding-bottom:6px;color:var(--accent);display:flex;justify-content:space-between;align-items:baseline}
+  .log h2 span{font-size:12px;font-family:'Courier New',monospace;color:#4f5d3a}
+  .tallies{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+  .tcard{flex:1;min-width:80px;background:#fff;border:1.5px solid var(--line);border-radius:3px;padding:10px;text-align:center}
+  .tcard .tv{font-family:Georgia,serif;font-size:24px;font-weight:700} .tcard .tl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#4f5d3a;margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+  th{text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#4f5d3a;border-bottom:1.5px solid var(--accent);padding:6px}
+  td{padding:8px 6px;border-bottom:1px solid var(--line);word-break:break-all}
+  td.n,th.n{text-align:center}
+  td.pick{color:var(--bad);font-weight:700} td.put{color:var(--ok);font-weight:700}
+  .lx{color:#9ab06a;cursor:pointer;font-weight:700}
+  .empty{font-size:13px;color:#8a9a6a;text-align:center;padding:18px;letter-spacing:1px}
+  .toolbar{display:flex;gap:10px;margin-top:14px}
+  .saved{font-size:10px;color:var(--ok);letter-spacing:1px;text-align:center;margin-top:8px}
+  .hide{display:none}
+  .modal{position:fixed;inset:0;background:rgba(40,60,20,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal.on{display:flex}
+  .card{background:var(--paper);border:2px solid var(--accent);border-radius:6px;max-width:440px;width:100%;padding:20px;box-shadow:8px 8px 0 var(--shadow)}
+  .card h3{font-family:Georgia,serif;font-size:19px;margin-bottom:8px;color:var(--accent)}
+  .card p{font-size:13px;color:#3a4a26;line-height:1.5;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Order Picking &amp; Putaway</div>
+    <h1><span class="jar">&#129362;</span> Mr. Picker</h1>
+    <div class="sub">Old order sheet &rarr; new locations &middot; live qty tracking</div>
+    <div class="count" id="count">&mdash;</div>
+    <div class="keybar"><a id="keyLink">Set / change API key</a></div>
+  </header>
+
+  <div class="tabs">
+    <button id="tabPick" class="on">&#128203; Pick Order</button>
+    <button id="tabPut">&#128230; Putaway</button>
+  </div>
+
+  <!-- ============ PICK MODE ============ -->
+  <div id="pickMode">
+    <div class="step">
+      <div class="shead">1 &middot; Read the order sheet</div>
+      <div class="sbody">
+        <button class="primary" id="sheetBtn">&#128247; Photograph Order Sheet</button>
+        <input type="file" id="sheetFile" accept="image/*" capture="environment" style="display:none">
+        <img id="preview">
+        <div class="stat" id="pickStat">AI reads the item numbers &amp; quantities. Old locations are ignored.</div>
+        <div class="err" id="pickErr"></div>
+        <div class="row" style="margin-top:10px">
+          <button id="typePartBtn" style="flex:1">+ Add part by hand</button>
+        </div>
+      </div>
+    </div>
+    <div class="step" id="queueStep" style="display:none">
+      <div class="shead">2 &middot; Pick list &mdash; tap to confirm each</div>
+      <div class="sbody">
+        <div class="pickqueue" id="pickqueue"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PUTAWAY MODE ============ -->
+  <div id="putMode" class="hide">
+    <div class="step">
+      <div class="shead">Identify the part</div>
+      <div class="sbody">
+        <div class="mode">
+          <button id="mScan" class="on">Scan</button>
+          <button id="mPhoto">Photo (AI)</button>
+          <button id="mType">Type</button>
+        </div>
+        <div id="scanPane">
+          <div id="reader"></div>
+          <button class="primary" id="scanBtn">Start Barcode Scan</button>
+        </div>
+        <div id="photoPane" class="hide">
+          <button class="primary" id="snapBtn">Take / Choose Photo</button>
+          <input type="file" id="fileIn" accept="image/*" capture="environment" style="display:none">
+        </div>
+        <div id="typePane" class="hide">
+          <label>Part number</label>
+          <div class="row"><input id="partIn" placeholder="PART #" autocomplete="off" autocapitalize="characters"><button id="partCheck" style="flex:0 0 90px">Find</button></div>
+        </div>
+        <div class="stat" id="putStat"></div>
+      </div>
+    </div>
+    <div class="step" id="putResStep" style="display:none">
+      <div class="shead">Result</div>
+      <div class="sbody">
+        <div class="find" id="putFind"><div class="fhead">
+          <div class="flabel" id="putFlabel"></div>
+          <div class="fpart" id="putFpart"></div>
+          <div class="floc" id="putFloc"></div>
+          <div class="fqty" id="putFqty"></div>
+        </div></div>
+        <div class="keepwarn" id="putKeep">&#9888; ON KEEP LIST</div>
+        <div class="locpick" id="putLocpick"></div>
+        <div id="putAssign" class="hide">
+          <label style="margin-top:14px">Assign / confirm location</label>
+          <input id="putLocIn" placeholder="E07F005" autocomplete="off" autocapitalize="characters">
+        </div>
+        <div class="qrow"><label>Qty</label><input id="putQty" type="number" inputmode="none" placeholder="1" min="1" readonly><button class="primary" id="putAddBtn" style="flex:0 0 130px">Add Here</button></div>
+        <div class="numpad" id="putNumpad">
+          <button class="np" data-k="1">1</button><button class="np" data-k="2">2</button><button class="np" data-k="3">3</button>
+          <button class="np" data-k="4">4</button><button class="np" data-k="5">5</button><button class="np" data-k="6">6</button>
+          <button class="np" data-k="7">7</button><button class="np" data-k="8">8</button><button class="np" data-k="9">9</button>
+          <button class="np" data-k="clr">C</button><button class="np" data-k="0">0</button><button class="np" data-k="del">&larr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHARED LOG ============ -->
+  <div class="log">
+    <h2>Change Log <span id="logcount">0 changes</span></h2>
+    <div class="tallies" id="tallies"></div>
+    <div id="logbox"><div class="empty">No changes yet.</div></div>
+    <div class="toolbar"><button id="csvBtn">Export Changes (CSV)</button><button id="clearBtn">Clear</button></div>
+    <div class="saved" id="savednote"></div>
+  </div>
+</div>
+
+<!-- numpad target modal for PICK confirm -->
+<div class="modal" id="pickModal"><div class="card">
+  <h3 id="pmTitle">Confirm pick</h3>
+  <p id="pmSub"></p>
+  <div id="pmLocpick" class="locpick"></div>
+  <label>Quantity picked</label>
+  <input id="pmQty" type="number" inputmode="none" placeholder="1" readonly>
+  <div class="numpad" id="pmNumpad">
+    <button class="np" data-k="1">1</button><button class="np" data-k="2">2</button><button class="np" data-k="3">3</button>
+    <button class="np" data-k="4">4</button><button class="np" data-k="5">5</button><button class="np" data-k="6">6</button>
+    <button class="np" data-k="7">7</button><button class="np" data-k="8">8</button><button class="np" data-k="9">9</button>
+    <button class="np" data-k="clr">C</button><button class="np" data-k="0">0</button><button class="np" data-k="del">&larr;</button>
+  </div>
+  <div class="row" style="margin-top:12px"><button class="primary" id="pmConfirm">Confirm Pick</button><button id="pmCancel" style="flex:0 0 90px">Cancel</button></div>
+</div></div>
+
+<div class="modal" id="keyModal"><div class="card">
+  <h3>Enter your Claude API key</h3>
+  <p>Stored only on this device. Used for the AI photo reading. Get it at console.anthropic.com. Starts with sk-ant-</p>
+  <input id="keyIn" placeholder="sk-ant-..." autocomplete="off" style="text-transform:none">
+  <div class="row" style="margin-top:12px"><button class="primary" id="keySave">Save</button><button id="keyCancel" style="flex:0 0 100px">Cancel</button></div>
+  <div class="err" id="keyErr"></div>
+</div></div>
+
+<script>
+const P2L={"8183811":[{"loc":"E03A001","qty":24}],"85607503":[{"loc":"E03A002","qty":4}],"8183429":[{"loc":"E03A003","qty":5}],"8112103":[{"loc":"E03B001","qty":3}],"8182249":[{"loc":"E03B002","qty":7}],"85608568":[{"loc":"E03B003","qty":4}],"8182919":[{"loc":"E03B004","qty":3}],"81105431":[{"loc":"E03B005","qty":2}],"8500998201":[{"loc":"E03C001","qty":1},{"loc":"E04D007","qty":3}],"906854":[{"loc":"E03C001","qty":21}],"9401411":[{"loc":"E03C002","qty":8}],"820082041":[{"loc":"E03C002","qty":1}],"83043822":[{"loc":"E03C003","qty":4}],"84199671":[{"loc":"E03C003","qty":1}],"8181860":[{"loc":"E03C004","qty":2}],"846FC61931":[{"loc":"E03C004","qty":3}],"81856301":[{"loc":"E03C005","qty":3}],"81855861":[{"loc":"E03C005","qty":2}],"8181708":[{"loc":"E03C006","qty":6}],"8183156":[{"loc":"E03C006","qty":23}],"84299325":[{"loc":"E03C007","qty":2}],"85610228":[{"loc":"E03C007","qty":1}],"8112102":[{"loc":"E03D001","qty":2}],"85607264":[{"loc":"E03D001","qty":9}],"84299170":[{"loc":"E03D002","qty":1}],"85611045":[{"loc":"E03D002","qty":3}],"82041627":[{"loc":"E03D003","qty":1}],"8182011":[{"loc":"E03D003","qty":1},{"loc":"E05D004","qty":6}],"820174911":[{"loc":"E03D003","qty":2}],"8182047":[{"loc":"E03D004","qty":4}],"8080048009":[{"loc":"E03D004","qty":3}],"81855721":[{"loc":"E03D005","qty":2}],"84399295":[{"loc":"E03D005","qty":5}],"9236821":[{"loc":"E03D006","qty":3}],"906930":[{"loc":"E03D006","qty":2}],"940610":[{"loc":"E03D007","qty":2}],"85611333":[{"loc":"E03D007","qty":6}],"909183":[{"loc":"E03E001","qty":14}],"81846751":[{"loc":"E03E002","qty":5}],"820124611":[{"loc":"E03E003","qty":3}],"85606879":[{"loc":"E03E003","qty":4}],"901180":[{"loc":"E03E004","qty":6}],"929591":[{"loc":"E03E004","qty":2}],"84198531":[{"loc":"E03E005","qty":1}],"84198285":[{"loc":"E03E005","qty":4}],"85607212":[{"loc":"E03E006","qty":10}],"850002831":[{"loc":"E03E006","qty":7}],"8112099":[{"loc":"E03E007","qty":3}],"8181918":[{"loc":"E03E007","qty":2}],"82099665":[{"loc":"E03F001","qty":4}],"85610499":[{"loc":"E03F001","qty":1}],"850001181":[{"loc":"E03F002","qty":2}],"85608566":[{"loc":"E03F002","qty":4}],"81817871":[{"loc":"E03F003","qty":3}],"83001044":[{"loc":"E03F003","qty":2}],"85607133":[{"loc":"E03F004","qty":3}],"81143731":[{"loc":"E03F004","qty":1}],"8107424":[{"loc":"E03F005","qty":1},{"loc":"E07F005","qty":1}],"84356851":[{"loc":"E03F005","qty":4}],"85609892":[{"loc":"E03F006","qty":1}],"85606409":[{"loc":"E03F006","qty":8}],"8182035":[{"loc":"E03F007","qty":2}],"85609418":[{"loc":"E03F007","qty":1}],"83031235":[{"loc":"E03G001","qty":1}],"8101898":[{"loc":"E03G002","qty":2}],"85607160":[{"loc":"E03G002","qty":31}],"80004911":[{"loc":"E03G003","qty":27}],"8183230":[{"loc":"E03G004","qty":4}],"85008953":[{"loc":"E03G004","qty":1}],"8561102908":[{"loc":"E03G005","qty":10}],"82045023":[{"loc":"E03G006","qty":1}],"84399316":[{"loc":"E03G007","qty":1}],"83011381":[{"loc":"E03G007","qty":2}],"84198870":[{"loc":"E03H001","qty":3},{"loc":"E07G006","qty":5}],"8182043":[{"loc":"E03H002","qty":4}],"81856781":[{"loc":"E03H002","qty":1}],"84399864":[{"loc":"E03H003","qty":2}],"85610365":[{"loc":"E03H003","qty":1}],"8183248":[{"loc":"E03H004","qty":7}],"8182339":[{"loc":"E03H004","qty":5}],"8560026401":[{"loc":"E03H005","qty":2}],"8501003801":[{"loc":"E03H005","qty":8}],"85609801":[{"loc":"E03H006","qty":4}],"83595987":[{"loc":"E03H006","qty":2}],"84197740":[{"loc":"E03H007","qty":1}],"8182352":[{"loc":"E03H007","qty":3}],"8111539":[{"loc":"E03J001","qty":1}],"85609748":[{"loc":"E03J001","qty":1}],"8183361":[{"loc":"E03J002","qty":1}],"8183159":[{"loc":"E03J002","qty":2}],"83016820":[{"loc":"E03J003","qty":4}],"84299923":[{"loc":"E03J003","qty":2}],"903142":[{"loc":"E03J004","qty":6}],"8182371":[{"loc":"E03J004","qty":1}],"929233":[{"loc":"E03J005","qty":1}],"89209611":[{"loc":"E03J006","qty":3}],"9077471":[{"loc":"E03J006","qty":2}],"83009018":[{"loc":"E03J007","qty":4}],"8182031":[{"loc":"E03J007","qty":5}],"89239587":[{"loc":"E04A001","qty":50}],"8181851":[{"loc":"E04A002","qty":11}],"83017574":[{"loc":"E04A003","qty":4}],"85610908":[{"loc":"E04B001","qty":2}],"8183311":[{"loc":"E04B002","qty":2},{"loc":"E04B003","qty":2}],"8181622":[{"loc":"E04B003","qty":8}],"85607785":[{"loc":"E04B004","qty":11},{"loc":"E09H004","qty":1}],"81855851":[{"loc":"E04B005","qty":5}],"85609743":[{"loc":"E04C001","qty":3}],"830151711":[{"loc":"E04C001","qty":8}],"925757GP":[{"loc":"E04C002","qty":3}],"85609746":[{"loc":"E04C002","qty":16}],"84198898":[{"loc":"E04C003","qty":1}],"8182317":[{"loc":"E04C003","qty":6}],"8301035":[{"loc":"E04C004","qty":6}],"850006102":[{"loc":"E04C004","qty":6}],"850000381":[{"loc":"E04C005","qty":1}],"84599219":[{"loc":"E04C005","qty":2}],"8106007":[{"loc":"E04C006","qty":2}],"8182979":[{"loc":"E04C006","qty":1}],"8181707":[{"loc":"E04C007","qty":24}],"81844671":[{"loc":"E04D001","qty":2}],"85607837":[{"loc":"E04D001","qty":2}],"85608195":[{"loc":"E04D002","qty":4}],"85610375":[{"loc":"E04D002","qty":5}],"8181987":[{"loc":"E04D003","qty":1}],"909847C":[{"loc":"E04D004","qty":1}],"8109945":[{"loc":"E04D004","qty":5}],"8183476":[{"loc":"E04D005","qty":8},{"loc":"E08C004","qty":8}],"83033278NE1":[{"loc":"E04D005","qty":63}],"8182719":[{"loc":"E04D006","qty":2}],"8108968":[{"loc":"E04D006","qty":4}],"8182457":[{"loc":"E04D007","qty":1}],"85610906":[{"loc":"E04E001","qty":4}],"8182009":[{"loc":"E04E001","qty":6}],"84299522":[{"loc":"E04E002","qty":4}],"81846741":[{"loc":"E04E002","qty":3}],"850000451":[{"loc":"E04E003","qty":2}],"84396312":[{"loc":"E04E003","qty":5}],"8140667":[{"loc":"E04E004","qty":2}],"8183374":[{"loc":"E04E004","qty":5}],"83002226":[{"loc":"E04E005","qty":4}],"83000993":[{"loc":"E04E005","qty":16}],"83002225":[{"loc":"E04E006","qty":3}],"8181949":[{"loc":"E04E006","qty":9}],"8182279":[{"loc":"E04E007","qty":5}],"84294151":[{"loc":"E04E007","qty":2}],"7109285":[{"loc":"E04F001","qty":1}],"8181620":[{"loc":"E04F001","qty":2}],"81855501":[{"loc":"E04F002","qty":7}],"8181785":[{"loc":"E04F002","qty":1}],"8560716108":[{"loc":"E04F003","qty":11}],"830136502":[{"loc":"E04F004","qty":2}],"8181733":[{"loc":"E04F004","qty":3}],"850000841":[{"loc":"E04F005","qty":2}],"8307014":[{"loc":"E04F005","qty":4}],"81857451":[{"loc":"E04F006","qty":6}],"83090081":[{"loc":"E04F006","qty":11}],"83018802":[{"loc":"E04F007","qty":2}],"903084":[{"loc":"E04F007","qty":8}],"81133341":[{"loc":"E04G001","qty":3}],"8181728":[{"loc":"E04G001","qty":2}],"8181999":[{"loc":"E04G002","qty":2}],"8181781":[{"loc":"E04G002","qty":2}],"8181977":[{"loc":"E04G003","qty":8}],"8181587":[{"loc":"E04G003","qty":5}],"905563":[{"loc":"E04G004","qty":3}],"818171210":[{"loc":"E04G004","qty":2}],"8104600":[{"loc":"E04G005","qty":1}],"8182787":[{"loc":"E04G005","qty":7}],"903102":[{"loc":"E04G006","qty":1}],"940410":[{"loc":"E04G006","qty":15}],"84399932":[{"loc":"E04G007","qty":2}],"9077751":[{"loc":"E04G007","qty":6}],"84197703":[{"loc":"E04H001","qty":1}],"85608567":[{"loc":"E04H001","qty":4}],"82009045":[{"loc":"E04H002","qty":2}],"83002102":[{"loc":"E04H003","qty":1}],"83031595":[{"loc":"E04H003","qty":2}],"81136871":[{"loc":"E04H004","qty":1},{"loc":"E16C004","qty":5}],"8109944":[{"loc":"E04H004","qty":4}],"8181631":[{"loc":"E04H005","qty":4}],"8182579":[{"loc":"E04H005","qty":2}],"820142501":[{"loc":"E04H006","qty":2}],"83010284":[{"loc":"E04H006","qty":1}],"85008922":[{"loc":"E04H007","qty":2}],"82401100":[{"loc":"E04H007","qty":2}],"85008905":[{"loc":"E04J001","qty":6}],"83006886":[{"loc":"E04J002","qty":2}],"8113907L1":[{"loc":"E04J003","qty":1}],"89231517":[{"loc":"E04J004","qty":1}],"89234452":[{"loc":"E05A001","qty":60}],"81819861":[{"loc":"E05A002","qty":26}],"90691410":[{"loc":"E05A003","qty":46}],"8111935":[{"loc":"E05B001","qty":10}],"8182079":[{"loc":"E05B002","qty":21}],"8182963":[{"loc":"E05B003","qty":28}],"8182958":[{"loc":"E05C001","qty":11}],"85609678":[{"loc":"E05C002","qty":10}],"8184926":[{"loc":"E05C003","qty":6}],"8309011":[{"loc":"E05D001","qty":2}],"8181996":[{"loc":"E05D002","qty":42}],"8560691902":[{"loc":"E05D003","qty":2}],"81822501":[{"loc":"E05D003","qty":28}],"8182786":[{"loc":"E05D004","qty":5}],"8181713":[{"loc":"E05D005","qty":7}],"903031":[{"loc":"E05D005","qty":2}],"81849691":[{"loc":"E05E001","qty":14}],"8183452":[{"loc":"E05E002","qty":5}],"8112098":[{"loc":"E05E002","qty":1}],"83033830":[{"loc":"E05E003","qty":1}],"8181912":[{"loc":"E05E003","qty":2}],"905290":[{"loc":"E05E004","qty":2}],"903085":[{"loc":"E05E005","qty":6}],"8181855":[{"loc":"E05E006","qty":6}],"8181780":[{"loc":"E05F001","qty":4}],"85610951":[{"loc":"E05F002","qty":4}],"906937":[{"loc":"E05F003","qty":3}],"8181988":[{"loc":"E05F003","qty":4}],"8182221":[{"loc":"E05F004","qty":3}],"85611537":[{"loc":"E05F005","qty":5}],"85608959":[{"loc":"E05F006","qty":2}],"830332786":[{"loc":"E05F007","qty":1}],"8182987":[{"loc":"E05F007","qty":1}],"8183786":[{"loc":"E05J001","qty":5}],"85611517":[{"loc":"E05J001","qty":4}],"8181981":[{"loc":"E05J002","qty":11}],"8182550":[{"loc":"E05J002","qty":2}],"903590":[{"loc":"E05J003","qty":1}],"83030571":[{"loc":"E05J003","qty":2}],"928584GP":[{"loc":"E05J004","qty":12}],"8181206":[{"loc":"E05J004","qty":8}],"8560896106":[{"loc":"E05J005","qty":3}],"83019212":[{"loc":"E05J006","qty":2}],"83001031":[{"loc":"E05J006","qty":2}],"8181369":[{"loc":"E05J007","qty":2}],"8182178":[{"loc":"E05J007","qty":1}],"81826191":[{"loc":"E06A001","qty":9}],"85000783":[{"loc":"E06A002","qty":8}],"81843691":[{"loc":"E06A003","qty":9}],"8183606":[{"loc":"E06B001","qty":10}],"8181995":[{"loc":"E06B002","qty":19}],"85000269":[{"loc":"E06B003","qty":6}],"81827881":[{"loc":"E06C001","qty":17}],"89233409":[{"loc":"E06C002","qty":30}],"82009091":[{"loc":"E06C003","qty":3}],"81813541":[{"loc":"E06D001","qty":4}],"8113082":[{"loc":"E06D001","qty":2}],"8181038":[{"loc":"E06D002","qty":3}],"8308062":[{"loc":"E06D002","qty":2}],"906920":[{"loc":"E06D003","qty":18}],"8112100":[{"loc":"E06D003","qty":2}],"8181677":[{"loc":"E06D004","qty":15}],"83019198":[{"loc":"E06D004","qty":3}],"85610388":[{"loc":"E06D005","qty":11}],"8112421":[{"loc":"E06D005","qty":7}],"8308171":[{"loc":"E06D006","qty":4}],"8183636":[{"loc":"E06D006","qty":3}],"85611357":[{"loc":"E06D007","qty":8}],"8183355":[{"loc":"E06D007","qty":4}],"909800":[{"loc":"E06D008","qty":6}],"85606462":[{"loc":"E06D008","qty":4}],"903101":[{"loc":"E06E001","qty":1}],"8181731":[{"loc":"E06E001","qty":4}],"8183604":[{"loc":"E06E002","qty":6}],"8182248":[{"loc":"E06E003","qty":9},{"loc":"E09D001","qty":2}],"81845841":[{"loc":"E06E004","qty":2}],"8183034":[{"loc":"E06E004","qty":1}],"906936":[{"loc":"E06E004","qty":1}],"8180046":[{"loc":"E06E004","qty":3}],"8108276":[{"loc":"E06E004","qty":1}],"821128791":[{"loc":"E06E004","qty":1}],"85607551":[{"loc":"E06F001","qty":1}],"8181675":[{"loc":"E06F002","qty":8}],"905280":[{"loc":"E06F003","qty":3}],"8112106":[{"loc":"E06F004","qty":3}],"820154331":[{"loc":"E06F005","qty":2}],"850003751":[{"loc":"E06F006","qty":1}],"83019971":[{"loc":"E06J001","qty":2}],"8183352":[{"loc":"E06J001","qty":9}],"83007935":[{"loc":"E06J002","qty":1}],"903110":[{"loc":"E06J002","qty":2}],"8182725":[{"loc":"E06J003","qty":6}],"85606722":[{"loc":"E06J003","qty":1}],"8110497":[{"loc":"E06J004","qty":2}],"82008125":[{"loc":"E06J004","qty":2}],"85610840":[{"loc":"E06J005","qty":1},{"loc":"E09A001","qty":7}],"87661701":[{"loc":"E06J006","qty":1}],"83199601":[{"loc":"E06J006","qty":4}],"8109949":[{"loc":"E06J007","qty":2}],"81855583":[{"loc":"E06J007","qty":3}],"8182961":[{"loc":"E07A001","qty":21}],"89209612":[{"loc":"E07A002","qty":3}],"906922":[{"loc":"E07A003","qty":7}],"85610044":[{"loc":"E07A004","qty":3}],"85613664":[{"loc":"E07B001","qty":4}],"85608563":[{"loc":"E07B002","qty":8}],"8183398":[{"loc":"E07B003","qty":1}],"8560896102":[{"loc":"E07B004","qty":7}],"8181712":[{"loc":"E07C001","qty":22}],"81844691":[{"loc":"E07C002","qty":2}],"850000881":[{"loc":"E07C003","qty":7}],"8500034201":[{"loc":"E07C004","qty":6}],"8105822":[{"loc":"E07C005","qty":2}],"8000376":[{"loc":"E07C006","qty":4}],"818171310":[{"loc":"E07C007","qty":1}],"84398037":[{"loc":"E07C008","qty":4}],"8181035":[{"loc":"E07D001","qty":24}],"8182016":[{"loc":"E07D002","qty":3}],"902064":[{"loc":"E07D003","qty":3}],"8101428":[{"loc":"E07D004","qty":8}],"70002301":[{"loc":"E07D005","qty":2}],"8183502":[{"loc":"E07D006","qty":2}],"8110923":[{"loc":"E07D007","qty":3}],"940435":[{"loc":"E07D008","qty":7}],"85612818":[{"loc":"E07E001","qty":10}],"8182164":[{"loc":"E07E002","qty":9}],"8181740":[{"loc":"E07E003","qty":3}],"85609890":[{"loc":"E07E004","qty":5}],"8101039":[{"loc":"E07E005","qty":2}],"907996":[{"loc":"E07E006","qty":24}],"8181989":[{"loc":"E07E007","qty":4}],"84299523":[{"loc":"E07E008","qty":3}],"84299308":[{"loc":"E07F001","qty":1}],"8111083":[{"loc":"E07F002","qty":2}],"820069961":[{"loc":"E07F003","qty":5}],"8182813":[{"loc":"E07F004","qty":4}],"83015269":[{"loc":"E07F006","qty":8}],"8181771":[{"loc":"E07F007","qty":1}],"83036445":[{"loc":"E07F008","qty":1}],"81826822":[{"loc":"E07G001","qty":3}],"85608197":[{"loc":"E07G002","qty":3}],"911227GP":[{"loc":"E07G003","qty":5}],"8120326":[{"loc":"E07G004","qty":5}],"84104191":[{"loc":"E07G005","qty":40}],"8120469":[{"loc":"E07G007","qty":4}],"8301609":[{"loc":"E07G008","qty":1}],"84199610":[{"loc":"E07H001","qty":2}],"9069146":[{"loc":"E07H002","qty":8}],"909492":[{"loc":"E07H003","qty":1}],"903125":[{"loc":"E07H004","qty":2}],"84298812":[{"loc":"E07H005","qty":10}],"8305802":[{"loc":"E07H006","qty":2}],"84197297":[{"loc":"E07H007","qty":2}],"8130026":[{"loc":"E07H008","qty":2}],"84399256":[{"loc":"E07J001","qty":84}],"8143044":[{"loc":"E07J002","qty":6}],"8181095":[{"loc":"E07J003","qty":2}],"83001114":[{"loc":"E07J004","qty":1}],"8100994":[{"loc":"E07J005","qty":2}],"80180020":[{"loc":"E07J006","qty":1}],"8181632":[{"loc":"E07J007","qty":1}],"85611218":[{"loc":"E07J008","qty":1}],"8180047":[{"loc":"E07K001","qty":2}],"85607780":[{"loc":"E07K002","qty":3}],"9069186":[{"loc":"E07K003","qty":18}],"85000850":[{"loc":"E07K004","qty":2}],"8184712":[{"loc":"E07K005","qty":2}],"85607817":[{"loc":"E08A001","qty":20}],"8113175":[{"loc":"E08A002","qty":7}],"85008971":[{"loc":"E08A003","qty":4}],"85610265":[{"loc":"E08A004","qty":2}],"85608961":[{"loc":"E08B001","qty":15}],"81142571":[{"loc":"E08B002","qty":7}],"81845621":[{"loc":"E08B003","qty":2}],"82004804":[{"loc":"E08B004","qty":1}],"8120325":[{"loc":"E08C001","qty":1}],"85610655":[{"loc":"E08C002","qty":10}],"83010837":[{"loc":"E08C003","qty":8}],"8182318":[{"loc":"E08C005","qty":3}],"8182385":[{"loc":"E08C006","qty":1}],"8106835":[{"loc":"E08C007","qty":6}],"83000114":[{"loc":"E08C008","qty":2}],"8182367":[{"loc":"E08D001","qty":4}],"8181929":[{"loc":"E08D003","qty":2}],"84399231":[{"loc":"E08D004","qty":2}],"84299171":[{"loc":"E08D005","qty":1}],"8182599":[{"loc":"E08D006","qty":2}],"83032343":[{"loc":"E08D007","qty":3}],"81857341":[{"loc":"E08D008","qty":4}],"8104844":[{"loc":"E08E001","qty":2}],"84393753":[{"loc":"E08E002","qty":8}],"9076812":[{"loc":"E08E003","qty":3}],"9076816":[{"loc":"E08E006","qty":10}],"923556":[{"loc":"E08F001","qty":1}],"9069142":[{"loc":"E08F002","qty":1}],"8301537":[{"loc":"E08F003","qty":1}],"8100964":[{"loc":"E08F004","qty":1}],"8106657":[{"loc":"E08F005","qty":1}],"82037816":[{"loc":"E08F006","qty":1}],"84194001":[{"loc":"E08F007","qty":1}],"85612922":[{"loc":"E08G001","qty":1}],"8181699":[{"loc":"E08G002","qty":2}],"8107517":[{"loc":"E08G003","qty":2}],"81816361":[{"loc":"E08G004","qty":2}],"81856211":[{"loc":"E08G005","qty":2}],"85609866":[{"loc":"E08H001","qty":3}],"81857711":[{"loc":"E08H002","qty":4}],"85608534":[{"loc":"E08H003","qty":1}],"8112107":[{"loc":"E08H004","qty":4}],"8181114":[{"loc":"E08J001","qty":1}],"8181695":[{"loc":"E08J003","qty":4}],"85608560":[{"loc":"E08J005","qty":3}],"814FW70362":[{"loc":"E08K001","qty":3}],"8180230":[{"loc":"E08K002","qty":3}],"906921":[{"loc":"E08K003","qty":8}],"85609908":[{"loc":"E08K004","qty":2}],"8560651601":[{"loc":"E08K005","qty":4}],"940175":[{"loc":"E09A002","qty":5}],"8182836":[{"loc":"E09A003","qty":6}],"85610709":[{"loc":"E09A004","qty":1},{"loc":"E22B002","qty":10}],"85606704":[{"loc":"E09B001","qty":1}],"8560716140":[{"loc":"E09B002","qty":2}],"85610237":[{"loc":"E09B004","qty":9}],"85611231":[{"loc":"E09C003","qty":17}],"856104041":[{"loc":"E09D002","qty":1}],"8181993":[{"loc":"E09D003","qty":1}],"83033743":[{"loc":"E09D004","qty":1}],"8106871":[{"loc":"E09E001","qty":1}],"85607789FR":[{"loc":"E09E003","qty":1}],"85609685":[{"loc":"E09E003","qty":4}],"85607622":[{"loc":"E09E004","qty":2}],"85610349":[{"loc":"E09F001","qty":1}],"8183315":[{"loc":"E09F002","qty":12}],"85611865":[{"loc":"E09F003","qty":1}],"85607379":[{"loc":"E09F004","qty":1}],"820151781":[{"loc":"E09G001","qty":1}],"8110410":[{"loc":"E09G002","qty":2}],"85610438":[{"loc":"E09G003","qty":1}],"85612738":[{"loc":"E09G004","qty":1}],"83019305NE":[{"loc":"E09G005","qty":5}],"8500922901":[{"loc":"E09H001","qty":5}],"81133331":[{"loc":"E09H002","qty":13}],"850003761":[{"loc":"E09J001","qty":2}],"8181511":[{"loc":"E09J002","qty":1}],"818394001":[{"loc":"E09J003","qty":7}],"8106298":[{"loc":"E09J004","qty":4}],"886SB67291":[{"loc":"E09K001","qty":2}],"85611409":[{"loc":"E09K002","qty":3}],"850007051":[{"loc":"E09K003","qty":2}],"81133321":[{"loc":"E09K004","qty":9}],"842989921":[{"loc":"E09K005","qty":2}],"805PR77895":[{"loc":"E10A001","qty":1}],"83002297":[{"loc":"E10B001","qty":14}],"8308820":[{"loc":"E10C001","qty":1}],"85607803":[{"loc":"E10C002","qty":2}],"8106572":[{"loc":"E10J001","qty":1},{"loc":"E10K001","qty":1}],"85607378":[{"loc":"E10J001","qty":2}],"8114386":[{"loc":"E10J002","qty":1}],"8560634301":[{"loc":"E10J003","qty":1}],"8112113":[{"loc":"E10J004","qty":1}],"82037953":[{"loc":"E10J005","qty":1}],"85612138":[{"loc":"E10K002","qty":2}],"8112101":[{"loc":"E10K003","qty":1}],"85609751":[{"loc":"E15A001","qty":7}],"8113277C":[{"loc":"E15A002","qty":10}],"8183061":[{"loc":"E15B001","qty":112}],"81062591":[{"loc":"E15B002","qty":10}],"830084031":[{"loc":"E15B003","qty":57}],"8184432":[{"loc":"E15B004","qty":69}],"85612839":[{"loc":"E15C001","qty":4}],"85612559":[{"loc":"E15C002","qty":3}],"85008984":[{"loc":"E15C003","qty":2}],"85612720":[{"loc":"E15C004","qty":1}],"8184052":[{"loc":"E15C005","qty":1}],"82008857":[{"loc":"E15C006","qty":2}],"85610268":[{"loc":"E15C007","qty":8}],"85610696":[{"loc":"E15D004","qty":1}],"85607129":[{"loc":"E15D006","qty":4}],"81846911":[{"loc":"E16A001","qty":12}],"85610405":[{"loc":"E16A002","qty":2}],"85608497":[{"loc":"E16B001","qty":4}],"85607786":[{"loc":"E16B004","qty":2}],"85607787":[{"loc":"E16B005","qty":7}],"85608531":[{"loc":"E16B006","qty":2}],"85611014":[{"loc":"E16B007","qty":8}],"81848141":[{"loc":"E16B008","qty":5}],"85608498":[{"loc":"E16C001","qty":1}],"8182167":[{"loc":"E16C003","qty":10}],"85609688":[{"loc":"E16C005","qty":2}],"85608286":[{"loc":"E16C007","qty":1}],"82001048":[{"loc":"E16D001","qty":1}],"82019556":[{"loc":"E16D002","qty":1}],"85009945":[{"loc":"E17A001","qty":2}],"85010010":[{"loc":"E17A001","qty":1}],"81833125":[{"loc":"E17A002","qty":1}],"8183312":[{"loc":"E17A002","qty":2}],"8182709":[{"loc":"E17A002","qty":3}],"85610728":[{"loc":"E17B001","qty":14}],"8183519":[{"loc":"E17B002","qty":6}],"85608287":[{"loc":"E17B003","qty":5}],"8200000400":[{"loc":"E17B005","qty":3}],"85607399":[{"loc":"E17C001","qty":3}],"8610105":[{"loc":"E17C003","qty":2}],"8182002":[{"loc":"E17C004","qty":2}],"85613796":[{"loc":"E17C005","qty":7}],"8110579":[{"loc":"E17D001","qty":1}],"886PR84984":[{"loc":"E17D002","qty":1}],"83043824":[{"loc":"E17D004","qty":1}],"82029017":[{"loc":"E17D005","qty":1}],"8181574":[{"loc":"E17D006","qty":2}],"820134171":[{"loc":"E18A001","qty":2}],"8500082501":[{"loc":"E18A001","qty":3}],"850002871":[{"loc":"E18A001","qty":4}],"85606545":[{"loc":"E18A002","qty":9},{"loc":"E18B003","qty":4}],"8300000400":[{"loc":"E18B001","qty":10}],"8302010510":[{"loc":"E18B002","qty":3}],"85613800":[{"loc":"E18C001","qty":2}],"85608212":[{"loc":"E18C002","qty":4}],"8560888301":[{"loc":"E18C003","qty":1}],"85608038":[{"loc":"E18C004","qty":1}],"85612685":[{"loc":"E18C005","qty":1}],"85611762":[{"loc":"E18D002","qty":2}],"8113795":[{"loc":"E18D004","qty":10}],"85610104":[{"loc":"E19B003","qty":1}],"8500999001":[{"loc":"E19B004","qty":1}],"81857281":[{"loc":"E19B005","qty":1}],"8182812":[{"loc":"E19B006","qty":1}],"8110947":[{"loc":"E19C001","qty":1}],"85610543":[{"loc":"E19D005","qty":1}],"85607986":[{"loc":"E20B001","qty":7}],"8181190":[{"loc":"E20B002","qty":2}],"8560888401":[{"loc":"E20B003","qty":3}],"85612143":[{"loc":"E20B004","qty":1}],"81845744":[{"loc":"E21B001","qty":2}],"8181990":[{"loc":"E21B002","qty":1}],"81833111P":[{"loc":"E21B003","qty":4}],"81828271":[{"loc":"E21B004","qty":3}],"85009048":[{"loc":"E21B006","qty":1}],"85609942":[{"loc":"E21B007","qty":3}],"85607010":[{"loc":"E21C001","qty":2}],"85000846":[{"loc":"E21C002","qty":3}],"85609077":[{"loc":"E21C003","qty":3}],"85613560":[{"loc":"E21C004","qty":5}],"85609808":[{"loc":"E21C005","qty":4}],"81848891":[{"loc":"E21C006","qty":2}],"85610859":[{"loc":"E21C007","qty":4}],"85610527":[{"loc":"E21C008","qty":1}],"8500992802":[{"loc":"E21D001","qty":1}],"81142651":[{"loc":"E21D002","qty":1}],"85612254":[{"loc":"E21D003","qty":2}],"8181627":[{"loc":"E21D004","qty":3}],"8560994201":[{"loc":"E21D005","qty":1}],"85611363":[{"loc":"E21D006","qty":1}],"85613438":[{"loc":"E21D007","qty":3}],"842FW018809":[{"loc":"E21E001","qty":1}],"85610323":[{"loc":"E22A001","qty":10}],"85613236":[{"loc":"E22B001","qty":10}],"85613237":[{"loc":"E22B003","qty":24}],"85613458":[{"loc":"E22B004","qty":4}],"8561220103":[{"loc":"E22B005","qty":21}],"85611000":[{"loc":"E22B006","qty":7}],"85608629":[{"loc":"E22C001","qty":3}],"8183585":[{"loc":"E22C002","qty":1}],"85613680":[{"loc":"E22C003","qty":1}],"8560639401":[{"loc":"E22C004","qty":1}],"81828202":[{"loc":"E22C005","qty":1}],"89234826":[{"loc":"E22D001","qty":1}],"8500992801":[{"loc":"E22D002","qty":20}],"811935":[{"loc":"E22D003","qty":5}],"85008917":[{"loc":"E22D004","qty":2}],"8182350":[{"loc":"EJ08E004","qty":2}],"85612835":[{"loc":"EJ08E004","qty":2}]};
+const KEEP_SET=new Set(["8181740","85608959","85607770","8111539","8183034","8108968","8182813","8110579","8560896106","85609678","8301537","85608195","8181949","905280","9069146","84399256","8183374","8181038","8181771","8183355","85609748","8500992801","8182963","820082041","85608609","8183156","940175","9076816","81133341","81845841","8182787","8182249","82041627","82008857","8181728","83030571","85609746","85609688","85610265","81133331","82019556","85606462","8182248","8500998201","84197703","83001031","84199671","85608214","820142501","850000841","8181369","85610840","85611409","85610365","8182339","901180","8181731","8183786","906936","84198898","8181912","8181713","85611537","846FC61931","8106007","8501003801","8183636","85610709","8181996","8101898","81855851","8184432","906922","8111083","8183585","81855861","8104600","81843691","83016820","85607786","85611517","8185598","84298812","85607622","8182016","820069961","85009945","85609077","84198870","85611333","8181190","8182350","8181095","85610906","81846911","8110497","8182958","83001114","818394001","84399295","8500999001","903101","84393753","8182786","84104191","856104041","84356851","830136502","8183502","84299923","8184712","85607160","8561127801","82045023","81857341","8183606","830151711","8181113","8182027","8100964","8301017","85610388","83002102","85609908","84198531","85609801","81816361","8182279","8560888301","8182385","8181981","85608567","850002871","83018802","84199610","85610268","8183429","940410","8130026","820154331","85609751","8181627","83199601","8180046","81857281","8109944","8112099","81855583","8181677","85000783","83006886","818171310","85608197","85610527","8112102","81062591","8182919","81142651","81849691","89234452","85610499","9401411","87661701","85607787","8182221","85008917","85610696","85613664","8181114","8182011","8560026401","903084","84299522","8104844","850002831","84294151","85606409","85608961","90691410","8182009","850006102","85610104","85610405","85607551","8180047","85609808","81828202","8560994201","8182719","82029017","85608560","8181620","8181785","85607010","8182028","8108276","80004911","8183230","84399231","84396312","8182550","8305802","81827881","85610655","8560634301","85008971","81105431","8183398","85610543","8182961","70002301","8560634401","923556","85609866","8113795","85611231","83019305NE","903031","84299325","928584GP","8120469","81136871","85008953","940610","8181851","8307014","8182167","8183311","85607129","8140667","850003751","8184052","8182812","85607133","8112100","8181574","83009018","85606722","85607378","81844691","83019971","81846741","8112421","85610044","81833111P","89209612","85608629","81819861","89239587","83001044","909492","8113907L1","8181855","81817871","940435","89233409","9076812","8114386","8500922901","83010284","8181629","8181995","83019212","84599219","902064","8183604","8183352","85608568","8183476","85607986","85612559","8560896102","820151781","84398037","85612143","8101428","903142","8113023","820174911","8181035","9236821","8112107","85611045","8181631","8182257","8182352","8301609","85607264","83019198","85608534","8560716108","886SB67291","85608531","8182579","909800","850000381","85610728","8181993","8113082","81826822","85608287","8101039","8107424","85610375","81856211","8182043","929591","8183312","830084031","8181206","85608563","81142571","8112101","842989921","81826191","8301035","81813541","85607785","83000993","85610908","830332786","8109945","906937","8180230","8181918","8561220103","85612626","8183811","8181733","8111935","8200000400","8181781","8181587","81848141","81855501","8561102908","820124721","82009091","85613237","850000881","907996","8182047","903085","8182031","818171210","85609942","89231517","85609890","850000451","909183","8183061","84197297","83007935","8181622","83011381","83033830","8106835","8110923","85608498","82004804","8182318","8120326","8184926","83043822","8309011","85606879","8181675","906854","85607817","85612922","82401100","85607780","81855721","8183452","8183519","8105822","84399864","8181780","85008905","81844671","8182079","905290","8560691902","8106871","8181699","83031595","8500034201","85610237","8560651601","8181712","85607212","85607967","846FC92123","82099665","903125","85010010","8183361","83002225","905563","8110947","8182035","84299523","8182709","8183315","820134171","83031235","84198285","81857451","8183248","8182002","81856301","81857711","85008922","85612818","820119671","906930","9077751","85609892","85606704","8181987","8000376","909847C","81849241","8182836","81846751","8182164","8181929","83000114","85610859","8560716140","906920","85608497","906921","8113175","85000850","8182371","85608566","85610323","8109949","8143044","8181695","9077471","85609418","85606545","81828271","8182367","83090081","929233","85610228","8183841","8080048009","81133321","8106298","83032343","8112098","925757GP","84299170","83002226","8181988","911227GP","83017574","8182178","85611014","8182725","85611357","8560761701","8183159","84299308","8300000400","903110","82009045","84399932","8181708","8181999","8182979","8308171","83033278NE1","84299171","83595987","85607399","85607503","9069186","89209611","8181977","82008125","903590","8181632","8181860","81833125","903102","85008984","8182317","8110410","84197740","842FW018809","8308062","83015269","85610951","8112106","85607803","8182457","85607379","85607837","8500082501","821128791","8107423","8181989","81822501","85612839","81856781","85611000","85000269","8181707","8181990","7109285","85609743","850001181","8182599","84399316","85610349","81845744","81143731","8182987","8112103","820124611","81848891","81845621","83036445","85608286","85613796"]);
+const UPC2PART={"667420124657":"6297101","667420154739":"70002301","667420190201":"70580227","667420017003":"7108966","667420017584":"7109285","667420017614":"7109294","667420017621":"7109295","667420019069":"8000372","667420019083":"8000376","667420019090":"8000378","667420019144":"8000465","667420160846":"80004911","667420019274":"8000580","667420228522":"805PR032862","667420209798":"8080048009","667420020164":"8100958","667420020171":"8100964","667420020362":"8101106","667420020584":"8101428","667420020621":"8101898","667420020676":"8102390","667420094325":"810246810","667420020706":"8102469","667420021017":"8104149","667420021055":"8104200","667420021178":"8104319","667420021253":"8104600","667420021277":"8104611","667420021314":"8104651","667420021321":"8104652","667420021345":"8104674","667420021369":"8104684","667420021383":"8104844","667420021406":"8104945","667420021437":"8104968","667420021543":"8105822","667420021574":"8106007","667420021598":"8106188","667420160563":"81062591","667420021772":"8106298","667420021789":"8106301","667420021802":"8106303","667420021819":"8106304","667420021932":"8106572","667420022045":"8106657","667420022120":"8106835","667420022175":"8106848","667420022212":"8106871","667420022663":"8107423","667420022670":"8107424","667420022748":"8107517","667420022830":"8107587","667420023158":"8107715","667420023264":"8107790","667420023561":"8108276","667420023615":"8108292","667420024155":"8108968","667420024483":"8109481","667420024797":"8109888","667420024810":"8109944","667420024827":"8109945","667420024841":"8109949","667420025305":"8110410","667420025312":"8110411","667420025329":"8110412","667420025398":"8110497","667420025404":"8110514","667420160822":"81105431","667420025527":"8110579","667420025930":"8110923","667420026197":"8111059","667420090389":"8111083","667420026258":"8111148","667420026319":"8111218","667420087556":"8111495","667420104208":"8111546","667420102426":"8111609","667420102686":"8111786","667420102747":"8111788","667420200825":"8111860","667420103188":"8111935","667420099962":"8112098","667420099979":"8112099","667420099986":"8112100","667420099993":"8112101","667420100019":"8112102","667420100026":"8112103","667420100033":"8112106","667420100002":"8112107","667420239344":"8112113","667420099542":"8112224","667420121274":"8112310","667420103713":"8112421","667420176076":"8112832","667420110377":"8113082","667420109357":"8113175","667420120444":"8113309C","667420147816":"81133321","667420147823":"81133331","667420147809":"81133341","667420116119":"8113390","667420137039":"81136871","667420139804":"8113796","667420173457":"8113907L1","667420143917":"8114023","667420147953":"81142111","667420147830":"81142531","667420147793":"81142571","667420147878":"81142581","667420147946":"81142591","667420147885":"81142642","667420148011":"81142651","667420147755":"81143021","667420149889":"81143651","667420149896":"81143711","667420149902":"81143721","667420148554":"81143731","667420150977":"8114386","667420149636":"8114400","667420150700":"81144601","667420027842":"8120321","667420027873":"8120326","667420028009":"8120366","667420028146":"8120408","667420028375":"8120469","667420028610":"8130026","667420210916":"814FB72050","667420198917":"814FW70362","667420028818":"8140667","667420028917":"8140786","667420029051":"8143044","667420029136":"8143168","667420029143":"8143169","667420029860":"8180046","667420029877":"8180047","667420029983":"8180163","667420030118":"8180217","667420030125":"8180230","667420030132":"8180237","667420030286":"8180638","667420030309":"8181035","667420030316":"8181038","667420030408":"8181082","667420030415":"8181095","667420030453":"8181113","667420030460":"8181114","667420030590":"8181172","667420030613":"8181174","667420030682":"8181183","667420030705":"8181190","667420030774":"8181206","667420160501":"81813541","667420030996":"8181369","667420031160":"8181574","667420031184":"8181587","667420031238":"8181620","667420031245":"8181622","667420031269":"8181629","667420092291":"8181631","667420098705":"8181632","667420031276":"8181633","667420155101":"81816361","667420031337":"8181658","667420031344":"8181675","667420031351":"8181677","667420031443":"8181695","667420031467":"8181699","667420150427":"81817041","667420031498":"8181707","667420031504":"8181708","667420031511":"8181712","667420094448":"818171210","667420031528":"8181713","667420115167":"818171310","667420031542":"8181728","667420031559":"8181731","667420121861":"8181733","667420031573":"8181740","667420031603":"8181771","667420031641":"8181780","667420031658":"8181781","667420031665":"8181785","667420159895":"81817871","667420031733":"8181851","667420031740":"8181855","667420031757":"8181860","667420031764":"8181862","667420139064":"8181863","667420031818":"8181912","667420031832":"8181915","667420031856":"8181918","667420031924":"8181929","667420032006":"8181949","667420032105":"8181971","667420032136":"8181977","667420032174":"8181981","667420032204":"8181984","667420122394":"81819861","667420032235":"8181987","667420032242":"8181988","667420032259":"8181989","667420032266":"8181990","667420032273":"8181993","667420032297":"8181995","667420032303":"8181996","667420032334":"8181999","667420032419":"8182009","667420032426":"8182011","667420032440":"8182016","667420032471":"8182023","667420032501":"8182027","667420032518":"8182028","667420032532":"8182031","667420032563":"8182035","667420032600":"8182040","667420032617":"8182043","667420032624":"8182044","667420032648":"8182047","667420032709":"8182059","667420032754":"8182078","667420032761":"8182079","667420032778":"8182081","667420032815":"8182088","667420033188":"8182164","667420033195":"8182167","667420033249":"8182178","667420033270":"8182186","667420033317":"8182221","667420033379":"8182248","667420087006":"8182249","667420160532":"81822501","667420087013":"8182279","667420033454":"8182317","667420090921":"8182318","667420033461":"8182319","667420125968":"8182332","667420033522":"8182339","667420033546":"8182350","667420139897":"8182358","667420033614":"8182367","667420033621":"8182371","667420033638":"8182373","667420163458":"8182385","667420033744":"8182439","667420033775":"8182457","667420033812":"8182550","667420033867":"8182568","667420033881":"8182579","667420033911":"8182593","667420033928":"8182599","667420160839":"81826191","667420095544":"8182661","667420095551":"8182662","667420159680":"81826822","667420091089":"8182709","667420087587":"8182719","667420090914":"8182725","667420096305":"8182786","667420096299":"8182787","667420161980":"81827881","667420096794":"8182809","667420097661":"8182811","667420093588":"8182812","667420096343":"8182813","667420098774":"8182820","667420105731":"81828202","667420144655":"81828271","667420095568":"8182836","667420187522":"8182843","667420095575":"8182894","667420092260":"8182919","667420093991":"8182958","667420093267":"8182961","667420096633":"8182962","667420093168":"8182963","667420095797":"8182979","667420103775":"8183034","667420093632":"8183061","667420096565":"8183114","667420096015":"8183156","667420096268":"8183159","667420100743":"8183230","667420100507":"8183248","667420113613":"8183306","667420105885":"8183307","667420145065":"81833081","667420132201":"8183309","667420124602":"8183310","667420115853":"8183311","667420163052":"81833111P","667420102518":"8183312","667420157990":"81833122P","667420202652":"81833125","667420099672":"8183315","667420128150":"8183352","667420100378":"8183355","667420099740":"8183361","667420152575":"8183369","667420103140":"8183373","667420103157":"8183374","667420100415":"8183398","667420103652":"8183429","667420137282":"8183434","667420115341":"8183452","667420102785":"8183471","667420109654":"8183476","667420102808":"8183502","667420103263":"8183519","667420109487":"8183585","667420104239":"8183604","667420104253":"8183606","667420133789":"8183636","667420106455":"8183642","667420151974":"8183649","667420111954":"8183666","667420106905":"8183770","667420113668":"8183786","667420106974":"8183811","667420107216":"8183830","667420125791":"8183841","667420111626":"818394001","667420109494":"8184052","667420122189":"8184059","667420122165":"8184301","667420114290":"8184327","667420122387":"81843691","667420134311":"8184432","667420135837":"81844671","667420135851":"81844691","667420138319":"8184508FR","667420137732":"8184518","667420164554":"81845621","667420158027":"81845744","667420141265":"81845791","667420141319":"81845841","667420141258":"81846521","667420142040":"81846741","667420144532":"81846751","667420148486":"81846911","667420143832":"8184712","667420155095":"81848031","667420151158":"81848141","667420151288":"81848891","667420155040":"81849051","667420148509":"8184926","667420154623":"81849291","667420153343":"81849691","667420154753":"81855501","667420154760":"81855583","667420154395":"81855721","667420155033":"81855851","667420155026":"81855861","667420233342":"8185598","667420155019":"81856211","667420160587":"81856301","667420152117":"81856521","667420151493":"81856771","667420151509":"81856781","667420151516":"81856791","667420152193":"81856881","667420154869":"81857131","667420152209":"81857211","667420154876":"81857251","667420152254":"81857281","667420151561":"81857341","667420151585":"81857451","667420151615":"81857481","667420151653":"81857611","667420154951":"81857691","667420154333":"81857701","667420154937":"81857711","667420239498":"8200000400","667420166893":"82001046","667420166602":"82001142","667420106998":"82004804","667420104444":"82006297","667420139583":"820069961","667420191031":"82008125","667420139132":"820082041","667420110872":"82008402","667420106837":"82008857","667420104895":"82009045","667420113484":"82009091","667420128303":"820097181","667420137923":"820119671","667420143795":"820124611","667420128327":"820124721","667420145324":"820126831","667420132300":"820134171","667420147595":"820142501","667420140909":"820151771","667420140886":"820151781","667420148561":"820154331","667420151998":"820158231","667420176731":"820174911","667420180301":"820174951","667420177479":"82018674","667420177431":"82019557","667420180455":"82019657","667420170036":"82029017","667420209682":"82032058","667420202003":"82032307","667420207602":"82033133","667420217243":"82037816","667420216116":"82040974","667420216925":"82041474","667420221875":"82041627","667420226405":"82045023","667420104505":"82099665","667420121281":"82108115","667420136551":"821128791","667420212095":"82130550","667420167319":"82401100","667420239351":"8300000400","667420104512":"83000114","667420142033":"83000164","667420120680":"83000889","667420167432":"83000993","667420167531":"83001031","667420167562":"83001044","667420167708":"83001114","667420167715":"83001115","667420167746":"83001135","667420167906":"83001313","667420115433":"83001342","667420150656":"83001996","667420104550":"83002102","667420128419":"830021091","667420129270":"830021171","667420105311":"83002157","667420105328":"83002159","667420107988":"83002160","667420122707":"83002225","667420115303":"83002226","667420104574":"83002297","667420150298":"83002601","667420136865":"83002629","667420125951":"83002901","667420115471":"83006106","667420128440":"830064771","667420107001":"83006886","667420121236":"83007935","667420114368":"83007953","667420111183":"83007988","667420160556":"830084031","667420166145":"83008811","667420126200":"83008990","667420164004":"83009012","667420123278":"83009017","667420114351":"83009018","667420035267":"8301017","667420121588":"83010284","667420035304":"8301032","667420035328":"8301035","667420172191":"83010824","667420035564":"8301121","667420035571":"8301122","667420168194":"83011381","667420035595":"8301142","667420176069":"830132401","667420152452":"830136502","667420151127":"830151711","667420142057":"830151871","667420228072":"83015269","667420035663":"8301537","667420176250":"830159501","667420035717":"8301609","667420180905":"83016820","667420170395":"83017574","667420203604":"83018802","667420177134":"83019007","667420177110":"83019198","667420177981":"83019212","667420218882":"83019305NE","667420179350":"83019971","667420239450":"8302010400","667420239986":"8302010510","667420177387":"83030571","667420183838":"83031235","667420183845":"83031595","667420212026":"83032343","667420224913":"83033278NE1","667420203185":"830332786","667420199013":"83033830","667420206124":"83035873","667420217236":"83036445","667420215874":"83040871","667420227587":"83043822","667420228096":"83043824","667420035946":"8305050","667420035977":"8305076","667420036035":"8305602","667420036059":"8305802","667420036134":"8307014","667420036158":"8307022","667420036394":"8308062","667420036462":"8308095","667420036554":"8308112","667420036561":"8308114","667420036653":"8308171","667420037049":"8308820","667420160525":"83090081","667420037209":"8309011","667420136605":"83099335","667420168828":"83199596","667420114313":"83199599","667420104611":"83199601","667420170487":"83595987","667420187676":"84RFM86798","667420207657":"84RFWB3793","667420202119":"84RSD86802","667420160860":"84104191","667420177325":"84193999","667420177349":"84194000","667420217311":"84194314","667420177424":"84196214","667420206162":"84196316","667420124336":"84197207","667420132317":"84197210","667420168323":"84197297","667420104628":"84197703","667420107353":"84197740","667420176403":"841978191","667420177530":"84198070","667420106981":"84198285","667420104666":"84198531","667420136025":"841985781","667420104673":"84198703","667420124589":"84198870","667420139057":"84198898","667420126002":"84198921","667420104697":"84198951","667420106844":"84198954","667420115624":"84198973","667420120949":"84199610","667420120987":"84199843","667420210930":"842FM79956","667420228584":"842FW018809","667420228997":"84293252","667420200092":"84294151","667420176465":"842950661","667420120567":"84297520","667420104734":"84297654","667420120604":"84297978","667420229000":"84298601","667420104741":"84298802","667420104758":"84298812","667420128532":"842989921","667420176496":"842991681","667420166558":"84299170","667420166541":"84299171","667420168880":"84299284","667420168897":"84299285","667420166480":"84299308","667420168910":"84299325","667420115327":"84299522","667420114306":"84299523","667420104796":"84299913","667420104802":"84299923","667420134687":"84356851","667420183951":"84393753","667420178001":"84393956","667420176557":"843962181","667420104826":"84398037","667420121670":"84398178","667420114320":"84398751","667420121434":"84398838","667420173266":"843989561","667420169221":"84399231","667420169238":"84399256","667420169368":"84399295","667420115587":"84399300","667420169405":"84399316","667420120758":"84399864","667420137749":"84399932","667420114344":"84399953","667420233588":"84399999","667420169573":"84597897","667420166589":"84599219","667420198849":"846FC61931","667420224333":"846FC92123","667420151714":"850000151","667420154661":"850000261","667420151851":"850000381","667420154906":"850000451","667420151875":"850000471","667420151912":"850000841","667420151943":"850000881","667420152346":"850001181","667420153039":"85000269","667420154944":"850002831","667420152896":"850002851","667420153190":"850002871","667420164547":"8500034201","667420153763":"8500036112","667420154210":"850003751","667420153978":"8500040501","667420156238":"850005011","667420159543":"850006102","667420157600":"850006271","667420157969":"850007051","667420173402":"8500073002","667420161454":"8500076101","667420159789":"85000783","667420162642":"8500082501","667420160921":"850008461","667420160686":"85000850","667420162109":"85008905","667420162413":"85008910","667420162437":"85008913","667420162444":"85008914","667420162475":"85008917","667420162598":"85008919","667420162499":"85008920","667420162512":"85008922","667420162147":"85008951","667420162161":"85008953","667420162277":"85008964","667420162345":"85008971","667420163649":"85008984","667420165797":"8500919901","667420165308":"8500922901","667420164622":"8500992801","667420165377":"85009943","667420165407":"85009945","667420165391":"85009950","667420168781":"8500997101","667420172948":"8500998201","667420168750":"8500998801","667420174157":"8500999001","667420168743":"8500999301","667420168736":"8500999401","667420169337":"85010010","667420172917":"8501003801","667420175444":"8560026401","667420179916":"8560030301","667420182169":"85606285","667420180103":"8560634301","667420179992":"8560634401","667420179596":"8560635501","667420174966":"85606374","667420179725":"8560637501","667420174942":"8560639401","667420177097":"8560639801","667420180110":"8560640301","667420180707":"85606409","667420175826":"85606462","667420175604":"8560646401","667420175550":"8560646601","667420175888":"8560651601","667420175925":"85606545","667420176953":"85606704","667420176960":"85606705","667420177004":"85606709","667420177028":"85606710","667420180950":"85606722","667420184477":"85606861","667420184491":"85606863","667420184415":"85606879","667420184071":"85606904","667420207817":"8560691902","667420184095":"85607010","667420184279":"85607027","667420184293":"85607129","667420184330":"85607133","667420201457":"85607160","667420198559":"8560716108","667420198566":"8560716140","667420184385":"85607181","667420184101":"85607212","667420189397":"85607264","667420207046":"85607378","667420207060":"85607379","667420207077":"85607380","667420206315":"85607382","667420206339":"85607384","667420212866":"85607399","667420187362":"85607456","667420202300":"85607502","667420198535":"85607503","667420188253":"85607520","667420188123":"85607551","667420190119":"8560761701","667420189939":"85607622","667420206483":"85607766","667420199334":"85607770","667420196494":"85607780","667420198580":"85607785","667420198597":"85607786","667420198603":"85607787","667420198610":"8560778801","667420198443":"85607803","667420198450":"85607804","667420199310":"85607806","667420199327":"85607807","667420199051":"85607814","667420198542":"85607817","667420199280":"85607818","667420198481":"85607837","667420201044":"85607947","667420207503":"85607950","667420201174":"85607967","667420200740":"85607986","667420200870":"85608038","667420201297":"85608058","667420206834":"85608188","667420203000":"85608195","667420202980":"85608197","667420201631":"85608212","667420201655":"85608214","667420202041":"85608286","667420202034":"85608287","667420202089":"85608312","667420202522":"85608497","667420202539":"85608498","667420202744":"85608531","667420202799":"85608534","667420203024":"85608560","667420203017":"85608563","667420203482":"85608566","667420203499":"85608567","667420204069":"85608568","667420202812":"85608587","667420202881":"85608609","667420212323":"85608629","667420203178":"85608742","667420221219":"85608817","667420204304":"85608850","667420207671":"8560888301","667420203987":"85608906","667420204625":"85608959","667420204632":"85608960","667420204144":"85608961","667420206353":"8560896102","667420206360":"8560896106","667420204533":"85609077","667420212828":"85609408","667420207183":"85609418","667420209149":"85609678","667420208111":"85609743","667420208128":"85609746","667420208135":"85609748","667420208159":"85609751","667420209057":"85609801","667420213184":"85609808","667420212330":"85609809","667420213191":"85609815","667420207947":"85609825","667420213160":"85609866","667420208692":"85609890","667420208708":"85609892","667420218912":"85609899","667420208876":"85609908","667420212842":"85609938","667420209293":"85609942","667420228980":"8560994201","667420208562":"85609951","667420210473":"85609961","667420208791":"85610044","667420209255":"85610095","667420209668":"85610109","667420218585":"85610228","667420212354":"85610237","667420210503":"85610264","667420210510":"85610265","667420210527":"85610268","667420210367":"85610323","667420210602":"85610349","667420211845":"85610365","667420211142":"85610370","667420210381":"85610375","667420217632":"85610388","667420215393":"856104041","667420210824":"85610405","667420211876":"85610469","667420212040":"85610499","667420212057":"85610511","667420213221":"85610527","667420212170":"85610540","667420213238":"85610543","667420212620":"85610636","667420212781":"85610655","667420213313":"85610679","667420212934":"85610682","667420212958":"85610696","667420212996":"85610709","667420213603":"85610728","667420213597":"85610733","667420220847":"85610840","667420215386":"85610859","667420228133":"85610906","667420218745":"85610907","667420219148":"85610908","667420221585":"85610951","667420218752":"85611000","667420218097":"85611014","667420219735":"8561102908","667420218783":"85611045","667420218684":"85611072","667420219865":"85611138","667420220809":"85611231","667420221004":"85611245","667420229383":"8561127801","667420224456":"85611333","667420224449":"85611340","667420225019":"85611357","667420225613":"85611409","667420226726":"85611517","667420226702":"85611537","667420229475":"8561160501","667420229499":"85611762","667420232147":"85612143","667420233298":"8561220103","667420235384":"85612559","667420233694":"85612626","667420235155":"85612818","667420236879":"85612835","667420235001":"85612839","667420235698":"85612922","667420237043":"85613236","667420237050":"85613237","667420241989":"85613664","667420242191":"85613796","667420228973":"86SB019672","667420157235":"866160921","667420190645":"867M81471A","667420129744":"8700022381","667420130016":"8700129451","667420130320":"8700224891","667420142613":"8700257521","667420205639":"87032876","667420125906":"87661161","667420147526":"87661701","667420149063":"8770250301","667420188192":"886SB67291","667420187935":"886SB80083","667420198931":"886SB86261","667420189816":"886SB89512","667420189601":"886SB92467","667420228669":"886SC026256","667420106349":"89209611","667420106356":"89209612","667420179855":"89231517","667420189274":"89233409","667420208340":"89234452","667420199907":"89234826","667420208333":"89239587","667420218066":"89242832","667420045884":"900220","667420046027":"900320","667420109067":"901180","667420047659":"902064","667420094080":"90206430","667420052820":"903017","667420135516":"9030241","667420052882":"903031","667420052899":"903032","667420052974":"903043","667420052981":"903047","667420053063":"903062","667420053100":"903077","667420053155":"903085","667420053193":"903089","667420053278":"903101","667420053292":"903102","667420053346":"903109","667420053353":"903110","667420053414":"903125","667420094110":"90314250","667420053537":"903148","667420160549":"9031611","667420053582":"903163","667420053629":"903169","667420053636":"903170","667420053643":"903171","667420053674":"903176","667420054015":"903320","667420054084":"903391","667420054091":"903392","667420054107":"903393","667420054114":"903394","667420054466":"903590","667420136506":"9036391","667420055524":"904435","667420055593":"904641","667420055616":"904670","667420055623":"904671","667420055647":"904725","667420055807":"904789","667420056033":"905280","667420056040":"905290","667420056316":"905563","667420056934":"906058","667420056965":"906077","667420057139":"906138","667420057177":"906155","667420057290":"906350","667420057436":"906446","667420057856":"906749","667420058174":"906872","667420058327":"906901","667420058389":"90691410","667420058396":"9069142","667420058402":"9069146","667420058419":"9069182","667420058426":"9069186","667420058433":"906920","667420058440":"906921","667420058457":"906922","667420124077":"906923GP","667420058495":"906930","667420058525":"906936","667420058549":"906937","667420058747":"906974","667420124039":"906977GP","667420058853":"906993","667420058921":"907005","667420059027":"907209","667420059058":"907264","667420059898":"9076816","667420059935":"907699","667420059959":"907703","667420059966":"907712","667420162840":"9077471","667420060139":"907764","667420060177":"907778","667420060191":"907783","667420060207":"9077841","667420060405":"907903","667420060412":"907904","667420060429":"907905","667420060436":"907908","667420123643":"907963GP","667420060481":"907996","667420061600":"908524","667420062089":"909183","667420062102":"909193","667420062270":"909313","667420062508":"909492","667420062638":"909592","667420062645":"909593","667420062942":"909813","667420062980":"909816","667420063017":"909822","667420063048":"909831","667420124008":"909879GP","667420063215":"909919","667420063420":"910241","667420063529":"910282","667420063536":"910283","667420123964":"910650GP","667420123681":"911227GP","667420125838":"920666P","667420068944":"920861","667420073610":"922764","667420074082":"923556","667420160518":"9236821","667420075331":"924239","667420078684":"925588","667420124220":"925757GP","667420084395":"928367","667420123940":"928584GP","667420096336":"929181","667420097548":"940052","667420160815":"9401411","667420097784":"940175","667420108435":"940410","667420108473":"940435","667420109081":"940610","667420175062":"940689","667420110674":"940719","667420131273":"9408681","667420113590":"9410411","667420123384":"941202","667420137688":"941391","667420161218":"9500006402"};
+const INVENTORY=new Set(["8111495","8111860","8114023","8182843","81857611","820097181","82018674","82037816","82045023","83001342","83011381","83015269","83017574","83036445","83043822","83595987","84197703","84399316","84399999","85606709","85606710","85609801","85610265","85610543","85610655","8561102908","85611231","8561127801","85612626","85612835","85612922","85613664","89234826","8185598","82029017","83043824","85608498","8560888301","850002871","85609751","81846911","8500082501","85008920","8500992801","842FW018809","903581","85610540","8560761701","83019023","85606904","8182568","8182820","81833125","85610549","81833122P","909313","85611000","81848891","820119671","8560994201","85612559","85607399","85609688","85611340","85607456","85010010","846FPB5402","85607010","85608629","85609808","8184508FR","85609938","82040974","907075","821148581","85608497","8181990","85609942","820134171","801801131","85609077","81828202","85609936","85009950","85610527","940175","940052","8183830","85609899","85608587","85610469","8183360","85608955","8182809","8182332","82130550","95000157","85609809","8184327","85609273","8106572","8183312","8182709","8183471","7108966","85608038","85612839","85009945","8183310","8112945","907005","8184432","85613796","846FC92123","82019556","85610268","8500076101","8184510","8113023","81845744","902780","81849291","85607799","6297101","9500008301","81062591","830084031","8183061","820124721","8181329","8309011","85608212","81817041","8183841","8561220103","8500997301","8183519","85008909","866160921","81848031","85608046","85608287","85610349","81142361","89242832","8183770","82119955","83008811","85608286","81849051","85609884","8184926","846FC61931","8183642","903394","85610682","8560634401","84198898","903036","83002225","83002226","8181915","909994","8181914","922404","85611333","81142111","903393","886SB89512","8112099","8181996","903026","903077","927822","820151781","906937","906993","907742","910282","906973","8181988","8182027","84196316","8112098","910320","904670","906974","903039","905689","903033","83040871","8182167","85607503","8181855","85609408","84299522","85610375","8104266","940610","924239","910280","909822","909825","629755","925969","81142591","84197207","82019557","85606722","940410","83001044","903032","909816","922046","8182987","909879GP","909813","909592","81856301","906923GP","904725","8560646601","8182081","910341","903590","910337","903165","903125","903042","903141","85607806","84294264","902064","85610636","85611245","903101","9077841","85607837","8560647101","929591","8104968","903184","81857251","820082041","629694","903176","929181","903951","922764","85607181","85611072","84199671","84RFM86798","940415","83033278NE1","85611045","8112224","929167","925761","8305802","8181174","84298812","8308105","906977GP","907778","8105822","81846741","81143711","830151871","8181780","908530","8112731","907712","85607129","85607787","81142651","8182811","8113795","8182812","85607807","85609689","85610696","85609299","85008984","801800851","904641","903085","8182958","84298802","8182593","903110","906446","903058","903043","8110923","900220","940435","903142","83007935","8308114","83019305NE","8500073002","8182047","8181771","801801301","84398838","907908","907903","8181781","908524","908507","907904","907905","9077751","8181206","924516","923556","841985781","8100958","8561160501","84399932","85610733","85607502","903029","903159","903163","904435","81844691","907338","85607027","85607551","8181114","85000783","85609742","8183636","910283","8183476","910376","907748","9077471","8181712","8181347","8181095","920666P","81817871","907999","85607264","8182186","830021171","906350","8181713","905563","90692910GP","90206430","90983630","8000378","84199610","84199843","8101428","8102469","8103753","8111218","8181699","90314250","8108968","83009018","925913","8181977","8110514","8144114","70580505B","805PR032862","8183666","83033830","8500026501","85611014","906138","911227GP","85608197","82019657","85609741","83002157","886SB92626","8560030301","801800401","820158231","8182385","8182023","8182318","8182367","8182439","940485","83002159","83002160","81139212","8111645","8111083","8111059","941391","8183649","8181038","8500997101","84198703","8182350","84299523","906058","83099335","83018680","8109888","8110241","8180237","8181971","8182059","8182373","8183731","81845791","81856771","85610370","85610679","85611138","8182962","81848141","8181574","8560642501","8182002","8500919901","85607947","8112103","83002901","84198285","85606861","850004622","8110913","83001313","84197740","928367","940719","8501002501","85609951","906983","85608560","86SB019672","82099665","820151771","903172","920861","8500917501","907783","84299308","8102390","940101","850000471","909611","85608563","8104247","8113907L1","82008857","82008402","85610228","83019198","81857691","9500006402","8106188","8181928","8104945","81833081","8182599","8104319","8112101","81133321","83006106","81133331","81856521","8500998801","84198531","8560640301","925754GP","85608567","8110807","85608566","909193","8421596","906901","925588","904671","925270","8101898","83009017","843989561","81142581","81144601","8000372","8104674","8182321","8182007","8182008","85008953","909830","85008922","8182078","850000381","85608058","8700021841","84197297","8770250301","85609815","81816361","820142501","8112107","8305602","85607380","9087566","8500998201","8182185","82006297","906155","909492","906872","82008125","8110497","8305050","8107424","83002601","8183306","84298601","904789","8143169","8700022791","8130026","83007953","8107665","8182813","84198954","87661701","8106871","8500999001","85608531","81857281","8183710","85607786","85606376","85606845","84RFP97284","85612143","85008913","8183309","83199596","8112113","8308112","850000151","82031215","922043","83000164","903062","903391","925757GP","841978191","906820","8107049","5113175","85607490","85607823","85607697","70580409","830064771","8182044","907264","900320","85008919","8184518","82032058","8110168","8143956","90021210GP","903060","940483","7109295","8100964","8301142","8301537","84398751","83001031","830179741","84193999","83019662","85008960","8183369","90697210GP","83032343","8120408","842FW90266","906906","906981","906986","910338","8104651","8500058001","929192","84194000","6296961","7109294","907699","910329","922331","904449","8182708","84299171","84198973","906749","902364","85607950","81142531","8181993","83035873","82033133","8182257","8181190","8560639401","85000340","8183585","8110947","8184052","81856791","81144301","8182037","8113309C","81142081","903392","910650GP","906392","901963","81143651","903224","903066","907343","90690510GP","81857211","906451","8140786","907703","907007","940050","843962181","85608843","8700257521","8183307","81143731","903047","8110579","850002831","903171","903170","903324","84399256","940558","83001114","8106835","8107983","940689","8111546","83019007","85610237","85008947","85609472","85610511","820174951","70580227","8111788","8111785","81142642","8109949","83000114","82032307","8110006","8000312","8500999401","901680","810246810","8180163","84198070","84RFWB3793","830132401","903169","8301609","8301121","8104200","8700129451","8308535","8111789","8111786","85607814","8104652","940810","83019212","8112310","83199601","8182178","928824","82108115","8110918","929190","8110919","85606285","8501001401","940559GP","940560GP","85610264","8301017","83199599","8104844","8181984","84399300","805PR92460","85606705","886SB96678","70580200","8111539","83010824","886SB86261","87032876","830021091","87919413","83007988","8181862","84294151","85608467","907209","941202","8144026","8112839","84RSD88662","8183159","85008962","842FM79956","8108292","850003751","83002102","909919","85610095","81845621","625456","910377","8560635501","84294008","850003071","8560646401","85609961","85609473","8114400","85607818","906077","84297978","85607732","83002629","8500036112","909831","85606859","8182319","8120469","8106278","925710","9408681","83016820","8301122","8182009","84399953","8182088","83001996","81854831","85610405","850008461","8107423","85606704","886SC026256","8113175","8182352","84RSD86802","925310","84597897","85600345","903017","84293252","84194314","910359","84398178","84297520","8182371","84297654","85609748","81857701","8181863","85609866","85607212","8181172","81118051","850000261","85608195","924446","850006102","8000465","85607767","8560646901","84198978","84398182","84399864","8183230","8700022381","81857481","85609418","8183034","801801091","8501001301","85610709","85608568","801800681","85606863","85008964","84RSD88665","867M84679C","867M71110A","8306806","850001161","82041474","8182979","85609746","85609743","84599219","83001135","8106657","87661161","85607382","8104684","81855721","85608906","8500999301","8700224891","940403","850002851","8181631","85608850","906975","85607804","84399231","8181929","81855583","85609892","8109944","8182579","911241","8180217","907263","910365","8101106","8104149","903320","85610728","8305006","8181627","929233","8184040","903123","8114388","8182662","85609825","821128791","8180046","903109","8109975","81143021","8560637501","850007051","81136871","85607133","842950661","85008910","8104611","903148","8120321","84299284","83001115","84399295","84299325","929582","830159501","8114386","85610499","8305076","8110411","8183355","85607803","8106007","8301035","8182040","8143044","9036391","81857341","8111148","906254","8181369","83009012","85608817","84393753","83010284","83031595","8111935","8182028","929240","85607379","908650","85607384","8113390","8120366","83006886","85RFG97285","8107790","909847C","908539","909593","85606462","907963GP","89234047","905290","814FW70362","8112421","84356851","81849241","8560716140","8181731","8080048009","84299923","9401411","8182661","8181633","82004804","85008971","85609908","830151711","8560896106","81833111P","901180","8560778801","82009091","85008977","81105431","8112106","85000269","820154331","8560639801","850001181","929590","85608312","83002297","8308095","8182248","8182249","85611357","8181620","8182550","8183311","8181629","8560651501","81846751","8560651601","85606578","85607520","85008917","8307014","8560634301","81857711","8183374","8181707","81855501","8182083","8182011","8181733","842991681","909444","8181904","830136502","8106298","8181658","8181695","83019971","9410411","9236821","85008951","8181587","85610907","903084","7109285","8181785","8183156","8183502","928584GP","8182031","8181035","8182025","906893GP","8000580","8181728","903031","8181949","8181987","8182024","820069961","8181113","8181999","8308017","81819861","85608959","81822471","8113082","85606409","81857131","85610908","8182919","8500922901","906936","8560647001","81142571","85008905","8181622","82032136","8180047","81855851","9031611","8308062","8182836","909800","8181082","8183361","81856211","85607378","84299170","8217019275","906839","8106301","8109481","850000881","818171210","8182787","8182786","8183352","82001142","8107587","82041627","8112102","81855861","8182894","85612818","84299913","8120326","850000841","8101039","8182164","903102","929935","8104600","818171310","8181708","83090081","84398037","8182725","84196214","81857451","8181978","8180638","8183429","8181851","8181995","8183811","85009995","83031235","81856881","886SB80083","8108276","85610044","85609678","81845841","82401100","85607817","89231517","85611409","8183398","81813541","8112100","85607780","81849691","85607622","85610951","830332786","84198921","85610906","922403","85607160","83000993","85608534","85609017","9030241","8184301","83030571","89234452","850006271","8109945","85607766","81844671","820126831","8106848","85608188","84197210","8106304","8143168","8183373","8182457","8181183","8182719","84299285","84396312","8106303","910279","850000451","8182279","8182963","8182788","81827881","90691410","8184712","85000850","85610840","89233409","80004911","89209612","886SB97108","85610109","8164000022","82009045","82008969","910241","842989921","85606879","8308171","89209611","89239587","886SB67291","85008914","8114473","842FW90555","867M81471A","82001046","886SB92467","84393956","8182358","8301032","8307022","81143721","886SB48150","85611537","8181860","8181918","8107517","83018802","84198951","8183452","8140667","8181981","85611517","8500034201","81846521","8182035","8111609","85606374","8560691902","8183434","8500040501","81826822","70002301","8560031001","903089","81855811","8182079","906920","81826191","8560896102","820124611","83008990","83000889","8184059","85608961","8183315","906922","85608960","8182961","8183604","909183","8181677","905280","8183606","856104041","8181675","85607785","9076816","85610388","9069186","818394001","906921","8560716108","8180230","906854","81843691","85610365","8110412","8182827","81828271","820174911","9076812","81822501","8183786","8181632","8560026401","8183114","9069142","85609890","84198870","8336742","8501003801","8112832","906930","8183248","8182317","8182221","9069182","8181788","8308820","907764","9069146","8181740","84104191","81133341","909812","8181912","8181989","85608742","8107715","8110410","8182043","8000376","850005011","8182016","8182339","81856781","907996","8113796","85608609","85610323","85606545","8200000400","85613366","85607986","85613236","85613237","85610859","85607770","85607967","8300000400","85610104","8302010400","8302010510","85009943","85611762","85608214","85610478","814FB72050"]);
+
+const norm=s=>(s||'').toString().trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+const $=id=>document.getElementById(id);
+const MODEL='claude-haiku-4-5';
+let totalParts=Object.keys(P2L).length;
+$('count').textContent=totalParts+' parts \u00b7 in P-1';
+
+const KEYSTORE='claudeApiKey_v1';
+const getKey=()=>{try{return localStorage.getItem(KEYSTORE)||''}catch(e){return''}};
+const setKey=k=>{try{localStorage.setItem(KEYSTORE,k)}catch(e){}};
+$('keyLink').onclick=()=>{$('keyIn').value=getKey();$('keyErr').textContent='';$('keyModal').classList.add('on');};
+$('keyCancel').onclick=()=>$('keyModal').classList.remove('on');
+$('keySave').onclick=()=>{const k=$('keyIn').value.trim();if(!k.startsWith('sk-ant-')){$('keyErr').textContent='Should start with sk-ant-';return;}setKey(k);$('keyModal').classList.remove('on');};
+
+// ---------- live working copy of quantities ----------
+// runtime[part][loc] = current qty (starts from P-1, mutated by picks/putaways this session)
+const STORE='mrPicker_v1';
+let changeLog=[];        // {action:'PICK'|'PUTAWAY'|'NEW', part, loc, qty}  qty always positive; action implies sign
+let runtime={};
+function seedRuntime(){
+  runtime={};
+  for(const p in P2L){runtime[p]={};P2L[p].forEach(e=>runtime[p][e.loc]=e.qty);}
+  // re-apply existing changeLog so reloads keep state
+  changeLog.forEach(c=>applyToRuntime(c,false));
+}
+function applyToRuntime(c,addLog){
+  if(!runtime[c.part])runtime[c.part]={};
+  const cur=runtime[c.part][c.loc]||0;
+  runtime[c.part][c.loc]=cur+(c.action==='PICK'?-c.qty:c.qty);
+  if(addLog)changeLog.unshift(c);
+}
+function curQty(part,loc){return (runtime[part]&&runtime[part][loc]!=null)?runtime[part][loc]:null;}
+function locsFor(part){
+  // from runtime keys (covers original P-1 locs + any newly assigned)
+  const r=runtime[part]||{};
+  return Object.keys(r).map(loc=>({loc,qty:r[loc]}));
+}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(changeLog));$('savednote').textContent='Saved on this device \u2014 '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){}}
+function loadState(){try{const r=localStorage.getItem(STORE);if(r)changeLog=JSON.parse(r);}catch(e){}}
+
+// ---------- tabs ----------
+function showTab(t){
+  $('tabPick').classList.toggle('on',t==='pick');$('tabPut').classList.toggle('on',t==='put');
+  $('pickMode').classList.toggle('hide',t!=='pick');$('putMode').classList.toggle('hide',t!=='put');
+}
+$('tabPick').onclick=()=>showTab('pick');$('tabPut').onclick=()=>showTab('put');
+
+// ================= PICK MODE =================
+let pickList=[]; // {part, orderQty, picked:false}
+function fileToScaledBase64(file,maxEdge){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{let w=im.width,h=im.height;const s=Math.min(1,maxEdge/Math.max(w,h));w=(w*s)|0;h=(h*s)|0;const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);res(c.toDataURL('image/jpeg',0.85).split(',')[1]);};im.onerror=rej;im.src=URL.createObjectURL(file);});}
+async function readSheet(b64){
+  const key=getKey();if(!key)throw new Error('NO_KEY');
+  const prompt='This is a warehouse ORDER PICK SLIP. Each line has an ITEM NUMBER (a part number, digits) and an ORDER QTY (the quantity to pick). IGNORE the location column, description, and line number. Return ONLY a JSON array, no other text, like: [{"part":"8182164","qty":2},{"part":"81813541","qty":6}]. Skip lines where the item number is FREIGHT, INSTALL, REMOVAL or non-numeric. If nothing readable return [].';
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:MODEL,max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:prompt}]}]})});
+  if(!r.ok){if(r.status===401)throw new Error('BAD_KEY');throw new Error('API '+r.status);}
+  const d=await r.json();let txt=(d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+  txt=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const s=txt.indexOf('['),e=txt.lastIndexOf(']');
+  if(s>=0&&e>=0)txt=txt.slice(s,e+1);
+  return JSON.parse(txt);
+}
+$('sheetBtn').onclick=()=>{if(!getKey()){$('keyModal').classList.add('on');return;}$('sheetFile').click();};
+$('sheetFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  $('preview').src=URL.createObjectURL(f);$('preview').style.display='block';
+  $('pickStat').textContent='Reading order sheet with AI\u2026';$('pickErr').textContent='';
+  try{
+    const items=await readSheet(await fileToScaledBase64(f,1500));
+    if(!items.length){$('pickErr').textContent='No item lines read. Try a clearer photo or add by hand.';return;}
+    items.forEach(it=>{const p=norm(it.part);if(p)pickList.push({part:p,orderQty:parseInt(it.qty)||1,picked:false});});
+    $('pickStat').textContent='Read '+items.length+' line(s).';
+    renderQueue();
+  }catch(err){
+    if(err.message==='NO_KEY')$('keyModal').classList.add('on');
+    else if(err.message==='BAD_KEY')$('pickErr').textContent='API key rejected.';
+    else $('pickErr').textContent='Could not read sheet ('+err.message+'). Add by hand instead.';
+  }
+};
+$('typePartBtn').onclick=()=>{
+  const p=norm(prompt('Part number?')||'');if(!p)return;
+  const q=parseInt(prompt('Order qty?')||'1')||1;
+  pickList.push({part:p,orderQty:q,picked:false});renderQueue();
+};
+function renderQueue(){
+  $('queueStep').style.display=pickList.length?'block':'none';
+  const box=$('pickqueue');box.innerHTML='';
+  pickList.forEach((it,idx)=>{
+    const locs=locsFor(it.part);
+    const inP1=locs.length>0;
+    const div=document.createElement('div');
+    div.className='pq'+(it.picked?' done':'')+(inP1?'':' miss');
+    let locHtml;
+    if(!inP1){locHtml='<div class="pqloc" style="color:var(--bad)">NOT IN P-1</div>';}
+    else if(locs.length===1){locHtml='<div class="pqloc">'+locs[0].loc+'</div>';}
+    else{locHtml='<div class="pqloc" style="font-size:14px">'+locs.length+' locations</div>';}
+    div.innerHTML='<div class="pqtop"><span class="pqpart">'+it.part+'</span>'+locHtml+'</div>'+
+      '<div class="pqmeta">Order qty: '+it.orderQty+(inP1&&locs.length===1?' \u00b7 in bin: '+locs[0].qty:'')+(it.picked?' \u00b7 \u2713 PICKED':'')+'</div>'+
+      (it.picked?'':'<div class="pqbtns"><button class="primary" data-pick="'+idx+'">Pick this</button><button data-skip="'+idx+'">Remove</button></div>');
+    box.appendChild(div);
+  });
+  box.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openPickModal(+b.dataset.pick));
+  box.querySelectorAll('[data-skip]').forEach(b=>b.onclick=()=>{pickList.splice(+b.dataset.skip,1);renderQueue();});
+}
+// pick confirm modal
+let pmIdx=null,pmLoc=null;
+function openPickModal(idx){
+  pmIdx=idx;const it=pickList[idx];const locs=locsFor(it.part);
+  $('pmTitle').textContent='Pick '+it.part;
+  $('pmQty').value=it.orderQty;
+  const lp=$('pmLocpick');lp.innerHTML='';pmLoc=null;
+  if(locs.length<=1){
+    pmLoc=locs.length?locs[0].loc:null;
+    $('pmSub').textContent=pmLoc?('From '+pmLoc+' (bin has '+curQty(it.part,pmLoc)+'). Confirm qty picked:'):'Not in P-1 \u2014 picking will be logged with no location.';
+  }else{
+    $('pmSub').textContent='This part is in '+locs.length+' bins \u2014 tap which one you picked from:';
+    locs.forEach(e=>{
+      const d=document.createElement('div');d.className='lp';
+      d.innerHTML='<span class="lloc">'+e.loc+'</span><span class="lqty">'+e.qty+' here</span>';
+      d.onclick=()=>{pmLoc=e.loc;lp.querySelectorAll('.lp').forEach(x=>x.style.background='#fff');d.style.background='var(--brine)';$('pmSub').textContent='Picking from '+e.loc+'. Confirm qty:';};
+      lp.appendChild(d);
+    });
+  }
+  $('pickModal').classList.add('on');
+}
+$('pmCancel').onclick=()=>$('pickModal').classList.remove('on');
+$('pmConfirm').onclick=()=>{
+  const it=pickList[pmIdx];const qty=parseInt($('pmQty').value)||0;
+  if(qty<=0){return;}
+  const locs=locsFor(it.part);
+  if(locs.length>1&&!pmLoc){$('pmSub').textContent='Please tap which bin you picked from first.';return;}
+  const loc=pmLoc||'(no location)';
+  const c={action:'PICK',part:it.part,loc:loc,qty:qty,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  applyToRuntime(c,true);
+  it.picked=true;
+  $('pickModal').classList.remove('on');
+  renderQueue();renderLog();save();
+  if(navigator.vibrate)navigator.vibrate(40);
+};
+
+// ================= PUTAWAY MODE =================
+function putMode(m){
+  ['Scan','Photo','Type'].forEach(x=>$('m'+x).classList.toggle('on',x.toLowerCase()===m));
+  $('scanPane').classList.toggle('hide',m!=='scan');$('photoPane').classList.toggle('hide',m!=='photo');$('typePane').classList.toggle('hide',m!=='type');
+  $('putStat').textContent='';if(m!=='scan')stopCam();if(m==='type')setTimeout(()=>$('partIn').focus(),50);
+}
+$('mScan').onclick=()=>putMode('scan');$('mPhoto').onclick=()=>putMode('photo');$('mType').onclick=()=>putMode('type');
+function resolve(code){const c=norm(code);if(P2L[c]||INVENTORY.has(c))return c;if(UPC2PART[c]){return UPC2PART[c];}return c;}
+function resolveInfo(code){const c=norm(code);if(P2L[c]||INVENTORY.has(c))return {part:c,upc:null};if(UPC2PART[c])return {part:UPC2PART[c],upc:c};return {part:c,upc:null};}
+
+let putPending=null,putLoc=null;
+function putPropose(part,src,upc){
+  const locs=locsFor(part);
+  putPending={part,src};putLoc=null;
+  const f=$('putFind');f.className='find'+(locs.length?'':' miss');
+  $('putFpart').innerHTML=part+(upc?'<div style="font-size:12px;color:#4f5d3a;font-weight:400;margin-top:2px">UPC '+upc+' \u2192 part '+part+'</div>':'');
+  $('putKeep').style.display=KEEP_SET.has(part)?'block':'none';
+  const lp=$('putLocpick');lp.innerHTML='';
+  $('putAssign').classList.add('hide');$('putLocIn').value='';
+  if(locs.length===0){
+    $('putFlabel').textContent='NOT IN P-1';
+    $('putFloc').textContent='\u2014';
+    $('putFqty').textContent='Location does not exist. Assign one below.';
+    $('putAssign').classList.remove('hide');
+    $('putAddBtn').textContent='Assign + Add';
+  }else if(locs.length===1){
+    putLoc=locs[0].loc;
+    $('putFlabel').textContent='BELONGS IN';
+    $('putFloc').textContent=locs[0].loc;
+    $('putFqty').textContent='Currently '+locs[0].qty+' here. Add more, or change location.';
+    $('putAddBtn').textContent='Add Here';
+    // allow override to a different location
+    const d=document.createElement('div');d.className='lp';d.innerHTML='<span class="lloc" style="font-size:14px">+ Different location</span><span class="lqty">assign new</span>';
+    d.onclick=()=>{putLoc=null;$('putAssign').classList.remove('hide');$('putAddBtn').textContent='Assign + Add';lp.querySelectorAll('.lp').forEach(x=>x.style.background='#fff');d.style.background='var(--brine)';};
+    lp.appendChild(d);
+  }else{
+    $('putFlabel').textContent='IN '+locs.length+' BINS \u2014 pick one';
+    $('putFloc').textContent='';
+    $('putFqty').textContent='Tap which bin you are adding to:';
+    locs.forEach(e=>{
+      const d=document.createElement('div');d.className='lp';
+      d.innerHTML='<span class="lloc">'+e.loc+'</span><span class="lqty">'+e.qty+' here</span>';
+      d.onclick=()=>{putLoc=e.loc;$('putAssign').classList.add('hide');lp.querySelectorAll('.lp').forEach(x=>x.style.background='#fff');d.style.background='var(--brine)';};
+      lp.appendChild(d);
+    });
+    const d=document.createElement('div');d.className='lp';d.innerHTML='<span class="lloc" style="font-size:14px">+ Different location</span><span class="lqty">assign new</span>';
+    d.onclick=()=>{putLoc=null;$('putAssign').classList.remove('hide');lp.querySelectorAll('.lp').forEach(x=>x.style.background='#fff');d.style.background='var(--brine)';};
+    lp.appendChild(d);
+    $('putAddBtn').textContent='Add Here';
+  }
+  $('putResStep').style.display='block';$('putQty').value='';
+  if(navigator.vibrate)navigator.vibrate(40);
+  $('putResStep').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+$('partCheck').onclick=()=>{const v=norm($('partIn').value);if(v){const ri=resolveInfo(v);putPropose(ri.part,'typed',ri.upc);$('partIn').value='';}};
+$('partIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('partCheck').click();});
+$('putAddBtn').onclick=()=>{
+  if(!putPending)return;
+  let loc=putLoc;
+  const assigning=!$('putAssign').classList.contains('hide');
+  if(assigning){loc=norm($('putLocIn').value);if(!loc){$('putStat').textContent='Enter a location first.';return;}}
+  if(!loc){$('putStat').textContent='Pick or assign a location first.';return;}
+  const qty=parseInt($('putQty').value)||0;
+  if(qty<=0){$('putStat').textContent='Enter a quantity.';return;}
+  const isNew=(curQty(putPending.part,loc)==null);
+  const c={action:isNew?'NEW':'PUTAWAY',part:putPending.part,loc:loc,qty:qty,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  applyToRuntime(c,true);
+  $('putStat').textContent='Added '+qty+' to '+loc+'.';$('putResStep').style.display='none';putPending=null;
+  renderLog();save();putMode('scan');
+};
+
+// numpads
+function wireNumpad(padId,inputId){document.querySelectorAll('#'+padId+' .np').forEach(b=>{b.onclick=()=>{const k=b.dataset.k;let v=$(inputId).value;if(k==='clr')v='';else if(k==='del')v=v.slice(0,-1);else v=(v==='0'?'':v)+k;$(inputId).value=v;};});}
+wireNumpad('putNumpad','putQty');wireNumpad('pmNumpad','pmQty');
+
+// ---------- camera + photo (putaway) ----------
+let scanner=null,running=false,lastV='',lastT=0;
+function stopCam(){if(scanner&&running){scanner.stop().then(()=>{running=false;$('reader').style.display='none';$('scanBtn').textContent='Start Barcode Scan';});}}
+$('scanBtn').onclick=async()=>{
+  if(running){stopCam();return;}
+  if(!scanner)scanner=new Html5Qrcode('reader');
+  try{$('reader').style.display='block';
+    await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:280,height:160}},t=>{const now=Date.now();if(t===lastV&&now-lastT<2500)return;lastV=t;lastT=now;stopCam();const ri=resolveInfo(t);putPropose(ri.part,'barcode',ri.upc);},()=>{});
+    running=true;$('scanBtn').textContent='Stop';
+  }catch(e){$('putStat').textContent='Camera blocked. Use Photo or Type.';$('reader').style.display='none';}
+};
+async function readPart(b64){
+  const key=getKey();if(!key)throw new Error('NO_KEY');
+  const prompt='You are reading a warehouse part label. Find the PART NUMBER (large number near the top). IGNORE the long 12-13 digit UPC/barcode. Return ONLY the part number, no words. If unreadable return UNKNOWN.';
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:MODEL,max_tokens:40,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:prompt}]}]})});
+  if(!r.ok){if(r.status===401)throw new Error('BAD_KEY');throw new Error('API '+r.status);}
+  const d=await r.json();return (d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+}
+$('snapBtn').onclick=()=>{if(!getKey()){$('keyModal').classList.add('on');return;}$('fileIn').click();};
+$('fileIn').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;$('putStat').textContent='Reading with AI\u2026';
+  try{const raw=await readPart(await fileToScaledBase64(f,1100));
+    if(!raw||/^UNKNOWN$/i.test(raw)){$('putStat').textContent='AI could not read it. Try Type.';return;}
+    putPropose(norm(raw),'AI photo');$('putStat').textContent='AI read: '+raw;
+  }catch(err){if(err.message==='NO_KEY')$('keyModal').classList.add('on');else if(err.message==='BAD_KEY')$('putStat').textContent='API key rejected.';else $('putStat').textContent='Read failed ('+err.message+').';}
+};
+// hardware Bluetooth scanner
+let hwBuf='',hwTimer=null;
+function submitScan(){
+  if(hwBuf.length>=4){           // real codes are 4+ chars; ignore stray keys
+    const code=hwBuf;hwBuf='';
+    const ri=resolveInfo(code);putPropose(ri.part,'scanner',ri.upc);
+  }else{hwBuf='';}
+}
+document.addEventListener('keydown',e=>{
+  const tag=(e.target&&e.target.tagName)||'';
+  if(tag==='INPUT')return;
+  if($('putMode').classList.contains('hide'))return; // only in putaway
+  if(e.key==='Enter'){submitScan();return;}          // scanner sends Enter suffix
+  if(e.key&&e.key.length===1)hwBuf+=e.key;
+  // fallback: if the scanner has NO Enter suffix, auto-submit when keystrokes stop.
+  // 500ms is long enough for a full 12-13 digit UPC to stream in without being cut off.
+  clearTimeout(hwTimer);hwTimer=setTimeout(submitScan,500);
+});
+
+// ---------- shared change log ----------
+function renderLog(){
+  $('logcount').textContent=changeLog.length+' change'+(changeLog.length===1?'':'s');
+  const picks=changeLog.filter(c=>c.action==='PICK');
+  const puts=changeLog.filter(c=>c.action==='PUTAWAY');
+  const news=changeLog.filter(c=>c.action==='NEW');
+  $('tallies').innerHTML=
+    '<div class="tcard"><div class="tv">'+changeLog.length+'</div><div class="tl">Total</div></div>'+
+    '<div class="tcard"><div class="tv" style="color:var(--bad)">'+picks.length+'</div><div class="tl">Picks &minus;</div></div>'+
+    '<div class="tcard"><div class="tv" style="color:var(--ok)">'+puts.length+'</div><div class="tl">Putaway +</div></div>'+
+    (news.length?'<div class="tcard"><div class="tv" style="color:var(--accent)">'+news.length+'</div><div class="tl">New loc</div></div>':'');
+  const box=$('logbox');
+  if(!changeLog.length){box.innerHTML='<div class="empty">No changes yet.</div>';return;}
+  let t='<table><thead><tr><th>Action</th><th>Part #</th><th>Location</th><th class="n">Qty</th><th></th></tr></thead><tbody>';
+  changeLog.forEach((c,i)=>{
+    const cls=c.action==='PICK'?'pick':'put';
+    const sign=c.action==='PICK'?'\u2212':'+';
+    const lbl=c.action==='NEW'?'NEW':c.action;
+    t+='<tr><td class="'+cls+'">'+lbl+'</td><td>'+c.part+'</td><td>'+c.loc+'</td><td class="n '+cls+'">'+sign+c.qty+'</td><td class="n"><span class="lx" data-i="'+i+'">\u00d7</span></td></tr>';
+  });
+  box.innerHTML=t+'</tbody></table>';
+  box.querySelectorAll('.lx').forEach(x=>x.onclick=e=>{
+    const i=+e.target.dataset.i;const c=changeLog[i];
+    // reverse its runtime effect
+    applyToRuntime({action:c.action==='PICK'?'PUTAWAY':'PICK',part:c.part,loc:c.loc,qty:c.qty},false);
+    changeLog.splice(i,1);renderLog();renderQueue();save();
+  });
+}
+$('clearBtn').onclick=()=>{if(changeLog.length&&confirm('Clear the change log? (Picks/putaways will be forgotten.)')){changeLog=[];seedRuntime();renderLog();renderQueue();save();}};
+function dl(name,csv){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;a.click();}
+$('csvBtn').onclick=()=>{
+  if(!changeLog.length){$('savednote').textContent='Nothing to export yet.';return;}
+  // chronological (oldest first) for clean application to master
+  const rows=changeLog.slice().reverse();
+  let csv='Action,Part Number,Location,Qty Change,Time\n';
+  rows.forEach(c=>{
+    const signed=(c.action==='PICK'?-c.qty:c.qty);
+    csv+=[c.action,c.part,c.loc,signed,c.time||''].join(',')+'\n';
+  });
+  dl('mr_picker_changes.csv',csv);
+  $('savednote').textContent='Exported '+rows.length+' changes.';
+};
+
+// init
+loadState();seedRuntime();renderLog();renderQueue();
+if(changeLog.length)$('savednote').textContent='Loaded saved changes from this device.';
+if(!getKey())$('pickStat').textContent='Tip: set your API key (top right) to read order sheets & part photos.';
+</script>
+</body>
+</html>
